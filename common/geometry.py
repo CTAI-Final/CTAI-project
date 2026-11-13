@@ -1,7 +1,7 @@
-"""欧氏距离与行驶时间（规则文档第二、四节）。
+"""Euclidean distance and travel time (rules Sections 2 and 4).
 
-无道路、障碍物或交通拥堵；任意地点可直达。
-速度 0.5 公里/分钟 → 行驶时间（分钟）= 距离 / 0.5。
+There are no roads, obstacles, or traffic congestion; any two locations are directly reachable.
+Speed 0.5 km per minute -> travel time (minutes) = distance / 0.5.
 """
 
 from __future__ import annotations
@@ -14,12 +14,14 @@ def euclidean(x1: float, y1: float, x2: float, y2: float) -> float:
 
 
 def travel_time(distance_km: float, speed_km_per_min: float = 0.5) -> float:
-    """行驶时间（分钟）。预处理距离矩阵成本应单独记录（见规则第五节）。"""
+    """Travel time in minutes. Preprocessing cost of the distance matrix is recorded separately
+    (rules Section 5)."""
     return distance_km / speed_km_per_min
 
 
 def build_distance_matrix(inst: dict) -> list[list[float]]:
-    """节点 0 为仓库，1..n 为客户；返回 (n+1)×(n+1) 对称距离矩阵（公里）。"""
+    """Node 0 is the depot, 1..n are the customers; returns the (n+1)x(n+1) symmetric distance
+    matrix in kilometres."""
     pts = [(inst["depot"]["x"], inst["depot"]["y"])]
     pts += [(c["x"], c["y"]) for c in inst["customers"]]
     m = len(pts)

@@ -1,6 +1,7 @@
-"""CTAI 公共模块：场景读取、几何计算、合法性检查、结果提交。
+"""CTAI common package: scenario loading, geometry, legality checking, result submission.
 
-本目录由出题方维护；算法实现者只调用，不修改。
+This directory is maintained by the project owner. Algorithm implementers import it but
+must not modify it.
 """
 
 from .instance import load_instance, validate_instance
