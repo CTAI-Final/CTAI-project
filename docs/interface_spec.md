@@ -1,26 +1,30 @@
-# JSON 输入输出接口说明（草案，待审核冻结）
+# JSON Input/Output Interface Specification (draft, to be frozen)
 
-> 对应规则文档第十一节。业务规则已确认；**代码实现前应冻结字段名、错误码和版本号**。
-> 当前 `schema_version` 草案值：`"1.0"`。
+> Corresponds to Section 11 of the rules (`docs/rules_en.md`). The business rules are confirmed;
+> **the field names, error codes and version number must be frozen before implementation.**
+> Current draft `schema_version`: `"1.0"`.
+>
+> 中文版见 [interface_spec_zh.md](interface_spec_zh.md)。
 
-## 1. 输入场景文件（instance）
+## 1. Input scenario file (instance)
 
-采用 UTF-8 JSON。客户数量与数组长度必须一致；仓库编号固定为 0，客户编号建议为 1 至 n；
-货物需求为正数且不大于 100；时间窗满足 0 ≤ a ≤ b。
+UTF-8 JSON. `customer_count` must equal the length of the `customers` array; the depot id is
+fixed at 0 and customer ids run from 1 to n; demand must be positive and no greater than 100;
+the time window satisfies 0 ≤ a ≤ b.
 
-| 字段 | 类型 | 含义 |
+| Field | Type | Meaning |
 |---|---|---|
-| `schema_version` | string | 接口版本，如 `"1.0"` |
-| `scenario_id` | string | 唯一场景编号，如 `"example_001"` |
-| `depot` | object | `{"id": 0, "x": 10, "y": 10}`，仓库 |
-| `customer_count` | int | 客户数量 |
-| `vehicle_count` | int | 最多可用车辆数量（允许闲置） |
-| `vehicle_capacity_kg` | number | 统一载重上限（100） |
-| `speed_km_per_min` | number | 固定速度（0.5 公里/分钟） |
-| `service_time_min` | number | 统一客户服务时长（5 分钟） |
-| `customers` | array | 每项：`id, x, y, demand_kg, time_window_min` |
+| `schema_version` | string | Interface version, e.g. `"1.0"` |
+| `scenario_id` | string | Unique scenario id, e.g. `"example_001"` |
+| `depot` | object | `{"id": 0, "x": 10, "y": 10}`, the depot |
+| `customer_count` | int | Number of customers |
+| `vehicle_count` | int | Maximum number of available vehicles (idle ones allowed) |
+| `vehicle_capacity_kg` | number | Common load limit (100) |
+| `speed_km_per_min` | number | Fixed speed (0.5 km per minute) |
+| `service_time_min` | number | Common customer service time (5 minutes) |
+| `customers` | array | Each item: `id, x, y, demand_kg, time_window_min` |
 
-### 示例（两客户演示，不属于正式测试场景）
+### Example (two-customer demonstration, not a formal test scenario)
 
 ```json
 {
@@ -36,29 +40,30 @@
 }
 ```
 
-计算核对：0→1 距离 3 公里、行驶 6 分钟，服务后为第 11 分钟；1→2 距离 4 公里、行驶 8 分钟，
-第 19 分钟到达，服务后为第 24 分钟；2→0 距离 5 公里、行驶 10 分钟；
-全部任务完成时间 34 分钟，总行驶距离 12 公里。
+Calculation check: 0→1 is 3 km (6 min of travel), service ends at minute 11; 1→2 is 4 km
+(8 min), arrival at minute 19 and service ends at minute 24; 2→0 is 5 km (10 min);
+completion time of all tasks is 34 minutes, total travel distance is 12 km.
 
-## 2. 输出结果文件（run result）
+## 2. Output result file (run result)
 
-算法只向公共接口提交 `routes`；元数据、计时和校验结果由公共测试程序填充。
-算法自行报告的时间不作为权威评价值。
+The algorithm submits only `routes` to the common interface; the metadata, timing and validation
+results are filled in by the common test program. Times reported by the algorithm itself are not
+authoritative evaluation values.
 
-| 字段 | 含义 |
+| Field | Meaning |
 |---|---|
-| `schema_version` / `scenario_id` | 接口版本与场景编号 |
-| `algorithm_id` | 算法标识，如 `"solver_a"` |
-| `seed` / `run_index` | 随机种子与第几次运行（1–5） |
-| `experiment_mode` | `"time_budget"` 或 `"fixed_work"` |
-| `time_limit_sec` | 性能模式求解上限（30） |
-| `work_budget` / `work_done` / `work_completed` / `safety_limit_sec` | 仅规模模式 |
-| `termination` | `completed` / `timeout` / `error`；规模组额外 `safety_timeout` |
-| `feasible` | 是否存在合法路线（与 `work_completed` 互相独立） |
-| `routes` | 每辆使用车辆一条路线 `{"vehicle_id": k, "stops": [0, ..., 0]}` |
-| `solver_runtime_sec` | 求解耗时（公共测试程序计时） |
-| `makespan_min` / `total_distance_km` | 完成时间与总距离（检查器计算） |
-| `validation_errors` | 检查器错误列表；空数组表示合法 |
+| `schema_version` / `scenario_id` | Interface version and scenario id |
+| `algorithm_id` | Algorithm identifier, e.g. `"solver_a"` |
+| `seed` / `run_index` | Random seed and run number (1–5) |
+| `experiment_mode` | `"time_budget"` or `"fixed_work"` |
+| `time_limit_sec` | Performance-mode solving limit (30) |
+| `work_budget` / `work_done` / `work_completed` / `safety_limit_sec` | Scale mode only |
+| `termination` | `completed` / `timeout` / `error`; the scale group adds `safety_timeout` |
+| `feasible` | Whether a feasible route exists (independent of `work_completed`) |
+| `routes` | One route per used vehicle: `{"vehicle_id": k, "stops": [0, ..., 0]}` |
+| `solver_runtime_sec` | Solving time (timed by the common test program) |
+| `makespan_min` / `total_distance_km` | Completion time and total distance (computed by the checker) |
+| `validation_errors` | Checker error list; an empty array means feasible |
 
 ```json
 {
@@ -73,22 +78,26 @@
 }
 ```
 
-约定：
+Conventions:
 
-- 无合法路线时质量指标（`makespan_min`、`total_distance_km`）为 `null`，不得使用 NaN / Infinity。
-- 性能组超时且有合法快照可计为成功；规模组安全超时即便有合法路线也不计为完整计时样本。
-- 每辆使用车辆一条路线，闲置车辆省略。
+- When there is no feasible route the quality metrics (`makespan_min`, `total_distance_km`) are
+  `null`; NaN and Infinity must not be used.
+- A performance-group timeout with a feasible snapshot may count as a success; a scale-group
+  safety timeout does not count as a complete timing sample even if a feasible route exists.
+- One route per used vehicle; idle vehicles are omitted.
 
-## 3. 算法函数签名（建议）
+## 3. Algorithm function signature (suggested)
 
 ```python
 solve(instance: dict, seed: int, run_config: dict, submit_solution) -> None
 ```
 
-- `run_config` 两种模式：
+- `run_config` for the two modes:
   - `{"mode": "time_budget", "time_limit_sec": 30}`
-  - `{"mode": "fixed_work", "work_budget": <由算法定义>, "safety_limit_sec": <待审核>}`
-- `submit_solution(routes)`：算法在运行中可多次调用，公共接口保存当前最好合法方案；
-  超时采用截止前已保存的最佳方案。
-- 固定工作量的具体字段随算法定义（如迭代数、邻域尝试次数、种群×代数），
-  须在 `algorithms/<solver>/README.md` 中说明计数口径与重试上限。
+  - `{"mode": "fixed_work", "work_budget": <defined by the algorithm>, "safety_limit_sec": <pending review>}`
+- `submit_solution(routes)`: the algorithm may call it many times during a run; the common
+  interface keeps the best feasible solution so far, and on timeout it falls back to the best
+  solution saved before the deadline.
+- The concrete fields of the fixed work follow the algorithm definition (iteration count,
+  neighbourhood attempts, population × generations, ...), and the counting convention plus the
+  retry cap must be documented in `algorithms/<solver>/README.md`.
