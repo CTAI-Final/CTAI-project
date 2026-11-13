@@ -1,34 +1,43 @@
-# solver_b —— 算法二（负责人：待定）
+# solver_b — Algorithm 2 (owner: TBD)
 
-> 状态：占位。请负责人确定算法后更新本 README 与 `solver.py`。
-> 规则要求三位实现者各选一种**不同**算法并报备（规则文档第一节）。
+> Status: placeholder. The owner updates this README and `solver.py` once the algorithm is chosen.
+> Each of the three implementers must select a **different** algorithm and report it
+> (Section 1 of the rules).
+>
+> 中文版见 [README_zh.md](README_zh.md)。
 
-## 建议候选（规则文档第十二节，仅供选择）
+## Candidate methods (Section 12 of the rules; options only)
 
-- 可行插入贪心 + 局部搜索（客户迁移 / 交换 / 路线内重排）
-- 多起点随机贪心
-- 模拟退火
-- 禁忌搜索
-- 遗传算法
-- 小规模精确搜索（枚举 / 分支限界，仅适用小实例）
+- Feasible-insertion greedy with local search (relocation / exchange / intra-route reordering)
+- Multi-start randomized greedy
+- Simulated annealing
+- Tabu search
+- Genetic algorithm
+- Small-scale exact search (enumeration / branch and bound, small instances only)
 
-## README 必填项（规则文档第十三节）
+## Required README contents (Section 13 of the rules)
 
-- [ ] 算法思路
-- [ ] 选择理由
-- [ ] 伪代码
-- [ ] 理论复杂度（客户数 n、车辆数 k、迭代数 I 等变量的定义与整体表达式）
-- [ ] 参数表（含取值与调参依据）
-- [ ] 随机种子处理（只用 `seed` 派生随机数；确定性算法说明之）
-- [ ] 局限性
-- [ ] 依赖与运行方式
-- [ ] `time_budget` 模式：30 秒内的停止策略（如何保存当前最好合法方案）
-- [ ] `fixed_work` 模式：工作单位、目标数量、初始化和重试上限、
-      实际完成量计数及保护停止行为
+- [ ] Algorithm idea
+- [ ] Reason for the choice
+- [ ] Pseudocode
+- [ ] Theoretical complexity (define n, k, I, ... and give the combined expression)
+- [ ] Parameter table (values and tuning rationale)
+- [ ] Random-seed handling (derive randomness from `seed` only; explain for deterministic algorithms)
+- [ ] Limitations
+- [ ] Dependencies and how to run
+- [ ] `time_budget` mode: stopping strategy within 30 s (how the best feasible solution is kept)
+- [ ] `fixed_work` mode: work unit, target amount, initialization and retry caps,
+      actual work counting, and safety-stop behaviour
 
-## 运行方式（示例）
+## How to run (example)
 
 ```bash
-python runner/run_experiments.py --solver algorithms/solver_b \
-    --instance data/practice/example_001.json --seed 1 --run-index 1
+# Performance mode: 30 s budget
+python -m runner.run_experiments --solver algorithms.solver_b.solver:solve \
+    --instance data/practice/example_001.json --algorithm-id solver_b --seed 1 --run-index 1
+
+# Scale mode: fixed work
+python -m runner.run_experiments --solver algorithms.solver_b.solver:solve \
+    --instance data/practice/example_001.json --algorithm-id solver_b --seed 1 --run-index 1 \
+    --mode fixed_work --work-budget 100 --safety-limit-sec 300 --out-dir results/scale
 ```
