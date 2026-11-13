@@ -1,0 +1,66 @@
+{
+  "generator_version": "1.0",
+  "note": "Public practice scenarios. Formal scenarios use the same generator with seeds held by the project owner.",
+  "scenarios": [
+    {
+      "file": "easy_01.json",
+      "scenario_id": "easy_01",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "easy",
+      "seed": 20260101,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 114.08
+    },
+    {
+      "file": "easy_02.json",
+      "scenario_id": "easy_02",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "easy",
+      "seed": 20260102,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 96.06
+    },
+    {
+      "file": "medium_01.json",
+      "scenario_id": "medium_01",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "medium",
+      "seed": 20260103,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 103.2
+    },
+    {
+      "file": "medium_02.json",
+      "scenario_id": "medium_02",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "medium",
+      "seed": 20260104,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 104.5
+    },
+    {
+      "file": "hard_01.json",
+      "scenario_id": "hard_01",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "hard",
+      "seed": 20260105,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 107.15
+    },
+    {
+      "file": "hard_02.json",
+      "scenario_id": "hard_02",
+      "customer_count": 20,
+      "vehicle_count": 4,
+      "difficulty": "hard",
+      "seed": 20260106,
+      "generator": "datagen 1.0",
+      "reference_makespan_min": 101.28
+    }
+  ]
+}

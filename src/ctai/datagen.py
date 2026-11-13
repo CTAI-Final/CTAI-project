@@ -42,7 +42,9 @@ PRACTICE_SPECS: tuple[tuple[str, int, int, str, int], ...] = (
 )
 
 
-def _sample_points(rng: random.Random, count: int, depot: tuple[float, float]) -> list[tuple[float, float]]:
+def _sample_points(
+    rng: random.Random, count: int, depot: tuple[float, float]
+) -> list[tuple[float, float]]:
     """Uniformly scattered customers, kept at least 1 km away from the depot."""
     points: list[tuple[float, float]] = []
     while len(points) < count:
@@ -169,6 +171,40 @@ def generate(
     return skeleton
 
 
+def _format_instance(instance: dict) -> str:
+    """Render a scenario as JSON with one customer per line.
+
+    Customer objects are small and highly repetitive; one line each keeps a diff on a scenario
+    readable, which is why the committed files are written through this function rather than
+    through a generic ``json.dump``.
+    """
+    depot = instance["depot"]
+    lines = [
+        "{",
+        f'  "schema_version": "{instance["schema_version"]}",',
+        f'  "scenario_id": "{instance["scenario_id"]}",',
+        f'  "depot": {{"id": {depot["id"]}, "x": {depot["x"]}, "y": {depot["y"]}}},',
+        f'  "customer_count": {instance["customer_count"]},',
+        f'  "vehicle_count": {instance["vehicle_count"]},',
+        f'  "vehicle_capacity_kg": {instance["vehicle_capacity_kg"]},',
+        f'  "speed_km_per_min": {instance["speed_km_per_min"]},',
+        f'  "service_time_min": {instance["service_time_min"]},',
+        '  "customers": [',
+    ]
+    rows = []
+    for customer in instance["customers"]:
+        earliest, latest = customer["time_window_min"]
+        rows.append(
+            f'    {{"id": {customer["id"]}, "x": {customer["x"]}, "y": {customer["y"]}, '
+            f'"demand_kg": {customer["demand_kg"]}, '
+            f'"time_window_min": [{earliest}, {latest}]}}'
+        )
+    lines.append(",\n".join(rows))
+    lines.append("  ]")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
 def write_practice_set(out_dir: str | Path = "data/practice") -> list[Path]:
     """Regenerate the six committed practice files plus a manifest with the seeds."""
     out_dir = Path(out_dir)
@@ -191,9 +227,7 @@ def write_practice_set(out_dir: str | Path = "data/practice") -> list[Path]:
             )
 
         path = out_dir / f"{scenario_id}.json"
-        with path.open("w", encoding="utf-8") as handle:
-            json.dump(instance, handle, indent=2)
-            handle.write("\n")
+        path.write_text(_format_instance(instance), encoding="utf-8")
         written.append(path)
 
         manifest["scenarios"].append(
