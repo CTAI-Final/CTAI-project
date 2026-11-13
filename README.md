@@ -1,65 +1,110 @@
-# CTAI-project：多车辆配送路线优化
+# CTAI-project: Multi-Vehicle Delivery Route Optimization
 
-Computational Thinking for AI（Track A）课程项目。比较三种**自行实现**的配送优化算法，
-在统一规则下求解带容量与时间窗约束的多车辆配送路线问题。
+Computational Thinking for AI (Track A) course project. Three **self-implemented**
+delivery-optimization algorithms are compared under a common rule set for a multi-vehicle
+delivery routing problem with capacity and time-window constraints.
 
-- 项目规则：[docs/rules_zh_v0.2.md](docs/rules_zh_v0.2.md)（中文审核稿 v0.2）
-- 接口规范：[docs/interface_spec.md](docs/interface_spec.md)
-- 练习数据：[data/practice/](data/practice/)
+- Project rules: [docs/rules_en.md](docs/rules_en.md) (English) · [docs/rules_zh_v0.2.md](docs/rules_zh_v0.2.md) (中文审核稿)
+- Interface specification: [docs/interface_spec.md](docs/interface_spec.md)
+- Practice data: [data/practice/](data/practice/)
 
-## 项目摘要
+> 中文说明见 [README_zh.md](README_zh.md)。
 
-| 项目 | 统一规则 |
+## Project summary
+
+| Item | Common rule |
 |---|---|
-| 空间与仓库 | 20 × 20 公里正方形；仓库编号 0，坐标 (10,10) |
-| 车辆 | 同质车辆，载重上限 100 千克，固定速度 0.5 公里/分钟 |
-| 服务 | 每客户固定服务 5 分钟；时间窗为闭区间 |
-| 主目标 | 最小化**全部任务完成时间**（makespan），其次比较总行驶距离 |
-| 时间单位 | 配送时刻与耗时为分钟；算法计算耗时为秒 |
+| Space and depot | 20 × 20 km square; depot has id 0 and coordinates (10, 10) |
+| Vehicles | Homogeneous, 100 kg load limit, fixed speed 0.5 km per minute |
+| Service | Fixed 5 minutes per customer; time windows are closed intervals |
+| Primary objective | Minimize the completion time of all tasks (makespan), then total travel distance |
+| Time units | Delivery times and durations in minutes; algorithm computation time in seconds |
 
-## 两类实验
+## Two experiment groups
 
-| 实验组 | 配置 | 场景数 |
+| Experiment group | Configuration | Scenarios |
 |---|---|---|
-| 约束难度组 | 20 客户、4 车辆；简单/中等/困难各 5 个；每次最多 30 秒 | 15 |
-| 规模组 | 10/20/40 客户配 2/4/8 车辆，各 3 个；每算法固定工作量计时 | 9 |
-| 公开练习组 | 简单/中等/困难各 2 个；与正式数据不同 | 6 |
+| Constraint-difficulty group | 20 customers, 4 vehicles; 5 each for easy / medium / hard; at most 30 s per run | 15 |
+| Scale group | 10 / 20 / 40 customers with 2 / 4 / 8 vehicles, 3 each; timed with a fixed amount of work | 9 |
+| Public practice group | 2 each for easy / medium / hard; different from the formal data | 6 |
 
-- 正式共 24 个场景，每算法每场景 5 次，共 360 次运行（性能组 225 + 规模组 135）。
-- 种子统一使用 `[1,2,3,4,5]`（待审核）；全部正式测试在同一环境串行运行。
+- 24 formal scenarios in total, 5 runs per algorithm per scenario: 360 runs
+  (225 performance + 135 scale).
+- Seeds `[1, 2, 3, 4, 5]` (pending review); all formal runs execute serially on one machine.
 
-## 目录结构
+## Repository layout
 
 ```
-docs/           审核通过的规则、接口说明
-data/practice/  公开练习 JSON（6 个）
-common/         数据读取、距离计算、合法性检查、结果保存接口
-algorithms/     三位组员各自代码（solver_a / solver_b / solver_c）与 README.md
-runner/         两种模式的计时、种子、停止控制、工作量记录及结果输出
-evaluation/     统计与可视化
-results/        正式测试结果（发布范围由出题方安排）
+docs/           Approved rules and the interface specification
+data/practice/  Public practice JSON (6 files)
+common/         Data loading, distance computation, legality checker, result submission
+algorithms/     One directory per implementer (solver_a / solver_b / solver_c) with README.md
+runner/         Timing, seeds, stopping control, work counting and result output for both modes
+evaluation/     Statistics and visualization
+results/        Formal test results (release scope set by the project owner)
 ```
 
-## 算法公共接口（建议）
+### Who owns what
+
+| Location | Maintainer |
+|---|---|
+| `docs/`, `data/`, `common/`, `runner/`, `evaluation/` | Project owner / evaluation lead |
+| `algorithms/solver_a`, `solver_b`, `solver_c` | The three algorithm implementers, one directory each |
+
+Formal scenario data and the project owner's verification routes are **not** committed to this
+repository before the algorithm code is frozen.
+
+## Common algorithm interface
 
 ```python
 solve(instance, seed, run_config, submit_solution)
 ```
 
-- `run_config` 区分 `mode="time_budget"`（`time_limit_sec=30`）与
-  `mode="fixed_work"`（`work_budget` 与 `safety_limit_sec`）。
-- 算法只通过 `submit_solution` 提交 `routes`；计时与校验由公共测试程序负责。
+- `run_config` distinguishes `mode="time_budget"` (`time_limit_sec=30`) from
+  `mode="fixed_work"` (`work_budget` and `safety_limit_sec`).
+- The algorithm submits only `routes` through `submit_solution`; timing and validation are
+  performed by the common test program.
+- Call `submit_solution` as often as useful: the common interface keeps the best feasible
+  solution seen so far and falls back to it on timeout.
 
-## 分工
+## Quick start
 
-| 角色 | 职责 |
+```bash
+# Checker self-tests (5 tests; the practice example must give 34 min and 12 km)
+python -m unittest tests.test_checker -v
+
+# One performance-mode solve
+python -m runner.run_experiments --solver algorithms.solver_a.solver:solve \
+    --instance data/practice/example_001.json --algorithm-id solver_a --seed 1 --run-index 1
+
+# One fixed-work solve (scale mode)
+python -m runner.run_experiments --solver algorithms.solver_a.solver:solve \
+    --instance data/practice/example_001.json --mode fixed_work \
+    --work-budget 100 --safety-limit-sec 300 --out-dir results/scale
+```
+
+Requirements: Python 3.10+, with NumPy and Matplotlib permitted; an external optimization
+solver may not be used to perform the delivery optimization.
+
+## Division of work
+
+| Role | Responsibility |
 |---|---|
-| 出题方与评估负责人 | 规则与接口、场景生成、检查器与测试程序、统一运行统计 |
-| 算法实现者 ×3 | 各选一种不同算法并报备；自行实现核心步骤；提交代码与 README |
+| Project owner and evaluation lead | Rules and interface, scenario generation, checker and test program, unified run statistics |
+| Algorithm implementers × 3 | Select one distinct algorithm each and report it; implement the core steps; submit code with README |
 
-## 注意事项
+## Ground rules
 
-- 正式 24 个场景及验证路线**不得**在算法代码冻结前提交到本仓库。
-- 禁止按隐藏场景编号硬编码路线。
-- README 必须包含：算法思路、选择理由、伪代码、理论复杂度、参数、
-  随机种子处理、局限性、依赖与运行方式。
+- Formal scenarios and verification routes must not enter this repository before code freeze.
+- Hard-coding routes by hidden scenario id is prohibited.
+- Each `algorithms/<solver>/README.md` must state: algorithm idea, reason for the choice,
+  pseudocode, theoretical complexity, parameters, random-seed handling, limitations,
+  dependencies, how to run, and the behaviour of both `time_budget` and `fixed_work` modes.
+- Do not modify `common/`, `runner/`, `evaluation/` or `tests/` from inside an algorithm
+  directory; open a PR against the project owner instead.
+
+## Status
+
+The rules are a review draft (v0.2). The items listed in Section 15 of the rules are still
+pending confirmation, and the interface in `docs/interface_spec.md` must be frozen before
+coding starts.
