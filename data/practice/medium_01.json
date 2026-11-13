@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "medium_01",
+  "depot": {"id": 0, "x": 10.0, "y": 10.0},
+  "customer_count": 20,
+  "vehicle_count": 4,
+  "vehicle_capacity_kg": 100,
+  "speed_km_per_min": 0.5,
+  "service_time_min": 5,
+  "customers": [
+    {"id": 1, "x": 7.77, "y": 9.73, "demand_kg": 9.0, "time_window_min": [0, 49.5]},
+    {"id": 2, "x": 11.94, "y": 3.84, "demand_kg": 10.0, "time_window_min": [0, 88.4]},
+    {"id": 3, "x": 12.62, "y": 6.63, "demand_kg": 17.0, "time_window_min": [0, 61.5]},
+    {"id": 4, "x": 10.31, "y": 7.69, "demand_kg": 17.0, "time_window_min": [0, 70.0]},
+    {"id": 5, "x": 19.46, "y": 17.58, "demand_kg": 19.0, "time_window_min": [10.3, 94.3]},
+    {"id": 6, "x": 17.9, "y": 17.13, "demand_kg": 17.0, "time_window_min": [0, 84.1]},
+    {"id": 7, "x": 16.52, "y": 16.83, "demand_kg": 12.0, "time_window_min": [0, 68.3]},
+    {"id": 8, "x": 18.35, "y": 14.91, "demand_kg": 13.0, "time_window_min": [17.1, 109.1]},
+    {"id": 9, "x": 12.19, "y": 17.12, "demand_kg": 19.0, "time_window_min": [33.2, 118.2]},
+    {"id": 10, "x": 16.77, "y": 13.41, "demand_kg": 13.0, "time_window_min": [29.6, 118.6]},
+    {"id": 11, "x": 17.03, "y": 14.04, "demand_kg": 18.0, "time_window_min": [39.9, 114.9]},
+    {"id": 12, "x": 13.8, "y": 6.3, "demand_kg": 12.0, "time_window_min": [0, 73.0]},
+    {"id": 13, "x": 0.65, "y": 7.88, "demand_kg": 17.0, "time_window_min": [25.6, 117.6]},
+    {"id": 14, "x": 18.54, "y": 3.55, "demand_kg": 17.0, "time_window_min": [0, 87.5]},
+    {"id": 15, "x": 15.63, "y": 3.48, "demand_kg": 13.0, "time_window_min": [0, 78.7]},
+    {"id": 16, "x": 9.94, "y": 14.24, "demand_kg": 11.0, "time_window_min": [0, 67.7]},
+    {"id": 17, "x": 14.29, "y": 13.15, "demand_kg": 13.0, "time_window_min": [0, 50.6]},
+    {"id": 18, "x": 3.31, "y": 5.05, "demand_kg": 16.0, "time_window_min": [15.8, 96.8]},
+    {"id": 19, "x": 1.2, "y": 9.19, "demand_kg": 13.0, "time_window_min": [28.4, 121.4]},
+    {"id": 20, "x": 10.37, "y": 13.19, "demand_kg": 11.0, "time_window_min": [0, 52.4]}
+  ]
+}

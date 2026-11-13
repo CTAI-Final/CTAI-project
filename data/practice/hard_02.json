@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "hard_02",
+  "depot": {"id": 0, "x": 10.0, "y": 10.0},
+  "customer_count": 20,
+  "vehicle_count": 4,
+  "vehicle_capacity_kg": 100,
+  "speed_km_per_min": 0.5,
+  "service_time_min": 5,
+  "customers": [
+    {"id": 1, "x": 9.19, "y": 18.34, "demand_kg": 13.0, "time_window_min": [44.7, 97.7]},
+    {"id": 2, "x": 12.5, "y": 8.02, "demand_kg": 20.0, "time_window_min": [0, 49.7]},
+    {"id": 3, "x": 13.26, "y": 18.74, "demand_kg": 13.0, "time_window_min": [31.5, 85.5]},
+    {"id": 4, "x": 16.68, "y": 4.0, "demand_kg": 18.0, "time_window_min": [4.3, 63.3]},
+    {"id": 5, "x": 5.35, "y": 9.16, "demand_kg": 11.0, "time_window_min": [38.6, 92.6]},
+    {"id": 6, "x": 3.73, "y": 16.88, "demand_kg": 17.0, "time_window_min": [18.2, 67.2]},
+    {"id": 7, "x": 12.88, "y": 3.9, "demand_kg": 11.0, "time_window_min": [17.9, 73.9]},
+    {"id": 8, "x": 15.92, "y": 6.38, "demand_kg": 16.0, "time_window_min": [1.3, 52.3]},
+    {"id": 9, "x": 17.16, "y": 11.34, "demand_kg": 19.0, "time_window_min": [0, 44.6]},
+    {"id": 10, "x": 18.95, "y": 17.28, "demand_kg": 15.0, "time_window_min": [18.8, 64.8]},
+    {"id": 11, "x": 10.23, "y": 0.5, "demand_kg": 11.0, "time_window_min": [6.7, 73.7]},
+    {"id": 12, "x": 3.53, "y": 7.96, "demand_kg": 18.0, "time_window_min": [42.9, 103.9]},
+    {"id": 13, "x": 10.26, "y": 5.28, "demand_kg": 19.0, "time_window_min": [0.1, 50.1]},
+    {"id": 14, "x": 8.33, "y": 12.08, "demand_kg": 15.0, "time_window_min": [0, 47.4]},
+    {"id": 15, "x": 2.76, "y": 15.04, "demand_kg": 19.0, "time_window_min": [8.0, 64.0]},
+    {"id": 16, "x": 11.29, "y": 9.64, "demand_kg": 13.0, "time_window_min": [0, 28.7]},
+    {"id": 17, "x": 8.24, "y": 7.49, "demand_kg": 13.0, "time_window_min": [0, 38.1]},
+    {"id": 18, "x": 9.16, "y": 12.22, "demand_kg": 19.0, "time_window_min": [0, 32.7]},
+    {"id": 19, "x": 9.8, "y": 5.9, "demand_kg": 15.0, "time_window_min": [0, 51.6]},
+    {"id": 20, "x": 18.1, "y": 11.19, "demand_kg": 18.0, "time_window_min": [0, 55.5]}
+  ]
+}
