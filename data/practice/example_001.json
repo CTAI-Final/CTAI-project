@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "example_001",
+  "depot": {"id": 0, "x": 10, "y": 10},
+  "customer_count": 2,
+  "vehicle_count": 1,
+  "vehicle_capacity_kg": 100,
+  "speed_km_per_min": 0.5,
+  "service_time_min": 5,
+  "customers": [
+    {"id": 1, "x": 13, "y": 10, "demand_kg": 20, "time_window_min": [0, 30]},
+    {"id": 2, "x": 13, "y": 14, "demand_kg": 30, "time_window_min": [0, 40]}
+  ]
+}
