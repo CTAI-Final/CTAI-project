@@ -1,19 +1,20 @@
-"""两种模式的统一测试入口（规则文档第五、十一、十三节）。
+"""Unified test entry point for both modes (rules Sections 5, 11 and 13).
 
-用法示例（性能模式）：
-    python -m runner.run_experiments --solver algorithms/solver_a.solver:solve \
-        --instance data/practice/example_001.json --seed 1 --run-index 1 \
+Performance mode:
+    python -m runner.run_experiments --solver algorithms.solver_a.solver:solve \\
+        --instance data/practice/example_001.json --seed 1 --run-index 1 \\
         --mode time_budget
 
-用法示例（规模模式）：
-    python -m runner.run_experiments --solver algorithms/solver_a.solver:solve \
-        --instance data/practice/example_001.json --seed 1 --run-index 1 \
+Scale mode:
+    python -m runner.run_experiments --solver algorithms.solver_a.solver:solve \\
+        --instance data/practice/example_001.json --seed 1 --run-index 1 \\
         --mode fixed_work --work-budget 100 --safety-limit-sec 300
 
-说明：
-- 预处理（读取、距离矩阵）不计入求解耗时；
-- 求解耗时、termination、校验结果由本入口填充，算法自行报告的时间不作权威值；
-- 结果保存到 results/ 对应子目录。
+Notes:
+- Preprocessing (loading, distance matrix) is not counted in the solving time;
+- The solving time, termination and validation result are filled in here; times reported by the
+  algorithm itself are not authoritative;
+- Results are saved under the corresponding results/ subdirectory.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ from runner.timing import Timer, measure                     # noqa: E402
 
 
 def load_solver(spec: str):
-    """按 'package.module:function' 加载求解函数。"""
+    """Load a solver function from 'package.module:function'."""
     module_name, _, func_name = spec.partition(":")
     module = importlib.import_module(module_name)
     return getattr(module, func_name or "solve")
@@ -48,10 +49,10 @@ def run(instance_path: str, solver_spec: str, algorithm_id: str, seed: int,
         out_dir: str = "results/performance") -> dict:
     timings: dict[str, float] = {}
 
-    # ---- 预处理（不计入求解耗时） ----
+    # ---- preprocessing (not counted in the solving time) ----
     with measure(timings, "preprocess_sec"):
         inst = load_instance(instance_path)
-        dist_matrix = build_distance_matrix(inst)  # 预处理成本单独记录
+        dist_matrix = build_distance_matrix(inst)  # preprocessing cost recorded separately
 
     submitter = SolutionSubmitter(inst, algorithm_id, seed, run_index, mode)
     solve_fn = load_solver(solver_spec)
@@ -62,7 +63,7 @@ def run(instance_path: str, solver_spec: str, algorithm_id: str, seed: int,
         run_config["work_budget"] = work_budget
         run_config["safety_limit_sec"] = safety_limit_sec
 
-    # ---- 求解（计入） ----
+    # ---- solving (counted) ----
     timer = Timer()
     status = RunStatus(safety_limit_sec=safety_limit_sec,
                        work_budget=work_budget)
@@ -71,11 +72,13 @@ def run(instance_path: str, solver_spec: str, algorithm_id: str, seed: int,
         solve_fn(inst, seed, run_config, submitter)
         timer.stop()
         status.termination = "completed"
-    except Exception as exc:  # noqa: BLE001 —— 异常标记为失败并保留诊断
+    except Exception as exc:  # noqa: BLE001 -- anomalies marked as failures, diagnostics kept
         timer.stop()
         status.termination = "error"
         status.error_message = f"{type(exc).__name__}: {exc}"
-    status.work_done = None  # 工作量计数由算法的 WorkMeter 上报（待接入）
+    # TODO(owner): wire the algorithm's WorkMeter into this entry point so that `work_done`
+    # and `work_completed` are reported for the scale mode.
+    status.work_done = None
 
     result = submitter.to_result(
         termination=status.termination,
@@ -88,10 +91,10 @@ def run(instance_path: str, solver_spec: str, algorithm_id: str, seed: int,
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="CTAI 统一测试入口")
+    ap = argparse.ArgumentParser(description="CTAI unified test entry point")
     ap.add_argument("--solver", required=True,
-                    help="求解函数，格式 package.module:function")
-    ap.add_argument("--instance", required=True, help="场景 JSON 路径")
+                    help="solver function as package.module:function")
+    ap.add_argument("--instance", required=True, help="path to the scenario JSON")
     ap.add_argument("--algorithm-id", default="solver_a")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--run-index", type=int, default=1)

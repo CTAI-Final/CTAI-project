@@ -1,9 +1,12 @@
-"""分组统计（规则文档第八节）。
+"""Grouped statistics (rules Section 8).
 
-- 标准差使用样本标准差（分母 m−1，m 为合法运行次数；待审核）；
-- 失败不记成 0 分钟；全部失败时质量指标为 None（JSON null，不用 NaN/Infinity）；
-- 不混合两种停止规则的耗时；
-- 质量对比优先使用各算法都至少成功一次的共同场景，等权汇总。
+- The standard deviation is the sample standard deviation (denominator m-1, where m is the number
+  of feasible runs; pending review);
+- Failures are not recorded as 0 minutes; when every run fails the quality metrics are None
+  (JSON null, never NaN/Infinity);
+- Times from the two stopping rules are not mixed;
+- Quality comparisons preferentially use the common scenarios in which every algorithm succeeded
+  at least once, aggregated with equal weights.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ def _mean(xs: list[float]) -> float | None:
 
 
 def _sample_std(xs: list[float]) -> float | None:
-    """样本标准差；合法次数不足 2 次时返回 None（不足以评价波动）。"""
+    """Sample standard deviation; None when fewer than 2 feasible runs exist."""
     if len(xs) < 2:
         return None
     m = _mean(xs)
@@ -25,14 +28,15 @@ def _sample_std(xs: list[float]) -> float | None:
 
 
 def summarize_scenario(records: list[dict]) -> dict:
-    """单场景 5 次运行记录 → 指标汇总。
+    """Summarize the 5 run records of one scenario into metrics.
 
-    records: 每项至少含 feasible / makespan_min / total_distance_km /
-             solver_runtime_sec / termination / work_completed。
+    records: each item has at least feasible / makespan_min / total_distance_km /
+             solver_runtime_sec / termination / work_completed.
     """
     feasible = [r for r in records if r.get("feasible")]
     makespans = [r["makespan_min"] for r in feasible if r["makespan_min"] is not None]
-    dists = [r["total_distance_km"] for r in feasible if r["total_distance_km"] is not None]
+    dists = [r["total_distance_km"] for r in feasible
+             if r["total_distance_km"] is not None]
     runtimes = [r["solver_runtime_sec"] for r in records
                 if r.get("solver_runtime_sec") is not None]
     return {
@@ -50,13 +54,13 @@ def summarize_scenario(records: list[dict]) -> dict:
 
 
 def common_scenarios(per_algorithm: dict[str, set[str]]) -> set[str]:
-    """所有算法都至少成功一次的场景集合。"""
+    """Scenarios in which every algorithm succeeded at least once."""
     sets = list(per_algorithm.values())
     return set.intersection(*sets) if sets else set()
 
 
 def group_summaries(results: list[dict], group_key: str) -> dict:
-    """按组（如 简单/中等/困难 或 10/20/40 客户）汇总；等权平均。"""
+    """Summarize by group (easy/medium/hard, or 10/20/40 customers); equal weights."""
     grouped: dict[str, list[dict]] = defaultdict(list)
     for r in results:
         grouped[r.get(group_key, "unknown")].append(r)

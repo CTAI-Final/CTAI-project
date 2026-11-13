@@ -1,10 +1,11 @@
-"""保护上限与运行状态记录（规则文档第五、八节）。
+"""Safety limit and run-status recording (rules Sections 5 and 8).
 
-- 规模组可另设保护上限（具体秒数待审核，不默认沿用 30 秒）；
-- 触及保护上限或在规定工作完成前异常退出：标记为未完成，
-  保存实际工作量和已耗时间；
-- 不得把保护上限时间作为完整运行时间；
-- termination 取值：completed / timeout / error / safety_timeout。
+- The scale group may define a separate safety limit (exact seconds pending review; it does not
+  default to 30 seconds);
+- Reaching the safety limit, or exiting abnormally before the required work is complete, marks
+  the run as not completed and saves the actual work done and the elapsed time;
+- The safety-limit time must not be used as a complete run time;
+- termination values: completed / timeout / error / safety_timeout.
 """
 
 from __future__ import annotations
@@ -14,17 +15,17 @@ from dataclasses import dataclass
 
 @dataclass
 class RunStatus:
-    """单次运行状态。"""
+    """Status of a single run."""
 
     termination: str = "completed"       # completed/timeout/error/safety_timeout
-    work_done: int | None = None         # 实际完成工作量
-    work_budget: int | None = None       # 目标工作量
+    work_done: int | None = None         # work actually completed
+    work_budget: int | None = None       # target work
     safety_limit_sec: float | None = None
     error_message: str | None = None
 
     @property
     def work_completed(self) -> bool:
-        """是否完整执行规定工作量（与是否有合法路线互相独立）。"""
+        """Whether the required work was fully executed (independent of feasibility)."""
         return (self.termination == "completed"
                 and self.work_done is not None
                 and self.work_budget is not None

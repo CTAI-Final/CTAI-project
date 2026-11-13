@@ -1,12 +1,15 @@
-"""工作量计数（规则文档第五节规模实验）。
+"""Work counting (scale experiment, rules Section 5).
 
-规模模式固定的是**迭代等控制量**，不是底层运算次数；每步成本可以随客户数增长。
-不同算法的工作单位不同（见 algorithms/<solver>/README.md），本模块只提供统一计数口径：
+In scale mode what is fixed is a **control quantity such as the iteration count**, not the number
+of low-level operations; the cost of each step may grow with the number of customers. Different
+algorithms use different work units (see algorithms/<solver>/README.md); this module only provides
+a common counting convention:
 
-- 构造次数（贪心一次完整构造 = 1）
-- 邻域尝试次数（模拟退火 / 禁忌搜索）
-- 代数（遗传算法）
-- 重启、修复和初始解构造次数（须有明确计数或重试上限，不能无限补做）
+- complete constructions (one full greedy construction = 1)
+- neighbourhood attempts (simulated annealing / tabu search)
+- generations (genetic algorithm)
+- restarts, repairs and initial-solution constructions (must have an explicit count or retry cap
+  and must not be repeated indefinitely)
 """
 
 from __future__ import annotations
@@ -16,17 +19,17 @@ from dataclasses import dataclass, field
 
 @dataclass
 class WorkMeter:
-    """规模模式工作量计数器。字段随算法定义，此处为建议口径。"""
+    """Scale-mode work counter. Fields follow the algorithm definition; these are suggested."""
 
-    constructions: int = 0        # 完整构造次数
-    neighbor_moves: int = 0       # 邻域尝试次数
-    generations: int = 0          # 遗传算法代数
-    restarts: int = 0             # 重启次数
-    repairs: int = 0              # 修复次数
-    extra: dict = field(default_factory=dict)  # 算法自定义计数
+    constructions: int = 0        # complete constructions
+    neighbor_moves: int = 0       # neighbourhood attempts
+    generations: int = 0          # genetic-algorithm generations
+    restarts: int = 0             # restarts
+    repairs: int = 0              # repairs
+    extra: dict = field(default_factory=dict)  # algorithm-specific counters
 
     def total(self, unit: str) -> int:
-        """按声明的工作单位返回累计量。"""
+        """Return the accumulated amount for the declared work unit."""
         table = {
             "constructions": self.constructions,
             "neighbor_moves": self.neighbor_moves,

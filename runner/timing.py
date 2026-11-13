@@ -1,9 +1,10 @@
-"""计时边界控制（规则文档第五节计时边界建议）。
+"""Timing boundary control (timing-boundary suggestion in rules Section 5).
 
-- 输入读取及公共预处理（距离矩阵等）在计时**前**完成；
-- 算法自身初始化、构造、搜索和运行中的方案提交开销**计入**；
-- 最终复核、统计、绘图**不计入**；
-- 预处理成本单独记录，供理论分析说明。
+- Input loading and common preprocessing (distance matrix, ...) finish **before** timing starts;
+- The algorithm's own initialization, construction, search, and in-run solution submission
+  overhead are **counted**;
+- Final review, statistics and plotting are **not counted**;
+- Preprocessing cost is recorded separately and explained in the theoretical analysis.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Timer:
-    """求解阶段计时器（秒）。"""
+    """Solver-stage timer, in seconds."""
 
     elapsed: float = 0.0
     _start: float | None = None
@@ -39,7 +40,10 @@ class Timer:
 
 @contextmanager
 def measure(out: dict, key: str):
-    """把一段耗时可写入 out[key]（秒）。用于区分预处理/求解/复核阶段。"""
+    """Accumulate the duration of a block into out[key] (seconds).
+
+    Used to separate the preprocessing / solving / review stages.
+    """
     t0 = time.perf_counter()
     try:
         yield
@@ -48,5 +52,5 @@ def measure(out: dict, key: str):
 
 
 def within_budget(timer: Timer, time_limit_sec: float) -> bool:
-    """性能模式：是否仍在 30 秒预算内。"""
+    """Performance mode: whether the 30-second budget is still available."""
     return timer.elapsed < time_limit_sec
