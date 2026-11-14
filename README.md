@@ -68,6 +68,7 @@ Root-level project files include `pyproject.toml` for package and tool configura
 | [docs/interface.md](docs/interface.md) | The algorithm contract: `solve(...)`, `run_config`, submission, failure behaviour |
 | [docs/experiment_protocol.md](docs/experiment_protocol.md) | Both experiment groups, seeds, reporting, fairness rules |
 | [docs/architecture.md](docs/architecture.md) | Module map, data flow, design decisions, test strategy |
+| [docs/algorithm_contribution_workflow.md](docs/algorithm_contribution_workflow.md) | Candidate algorithm submissions, owner-run experiments, dependencies, work accounting and freeze policy |
 | [docs/algorithms/](docs/algorithms/) | One note per algorithm: idea, pseudocode, complexity, parameters, limitations |
 
 ## The three algorithms
@@ -192,7 +193,7 @@ and 3.13.
 
 - Rules v0.2 are approved; the open points from Section 15 are tracked as issues.
 - Checker, runner, both stopping modes and the practice generator are implemented and tested.
-- The three reference algorithms are working baselines, not final submissions: each implementer
+- The current reference algorithms are working baselines, not a limit on the candidate list: each implementer
   owns one module and its note, and may replace it entirely.
 - Formal scenarios are withheld until the algorithm code is frozen.
 
