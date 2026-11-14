@@ -4,7 +4,7 @@
 
 | Area | Owner | Rule |
 |---|---|---|
-| `docs/`, `data/`, `src/ctai/*.py`, `src/ctai/runner/`, `src/ctai/evaluation/`, `tests/` | Project owner / evaluation lead | Change by pull request only |
+| `docs/`, `data/`, shared core (`src/ctai/*.py`, `src/ctai/algorithms/base.py`, `src/ctai/algorithms/__init__.py`), `src/ctai/runner/`, `src/ctai/evaluation/`, `tests/`, `scripts/`, `.github/`, root configuration | Project owner / evaluation lead | Change by pull request only |
 | `src/ctai/algorithms/<yours>.py`, `docs/algorithms/<yours>.md` | The implementer of that algorithm | Change freely on your own branch |
 
 Each implementer owns one algorithm module (`src/ctai/algorithms/<name>.py`) and its note
