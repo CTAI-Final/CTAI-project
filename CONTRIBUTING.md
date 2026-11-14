@@ -7,8 +7,10 @@
 | `docs/`, `data/`, `src/ctai/*.py`, `src/ctai/runner/`, `src/ctai/evaluation/`, `tests/` | Project owner / evaluation lead | Change by pull request only |
 | `src/ctai/algorithms/<yours>.py`, `docs/algorithms/<yours>.md` | The implementer of that algorithm | Change freely on your own branch |
 
-An algorithm directory is never imported by another algorithm. If you need something from the
-shared core, open a pull request against the owner instead of editing the core from your branch.
+Each implementer owns one algorithm module (`src/ctai/algorithms/<name>.py`) and its note
+(`docs/algorithms/<name>.md`). Algorithm modules must not import one another. Put reusable
+operators in `src/ctai/algorithms/base.py`; changes to the shared core go through a pull request
+to the project owner.
 
 ## Workflow
 
