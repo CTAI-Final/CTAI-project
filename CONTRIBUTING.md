@@ -4,11 +4,14 @@
 
 | Area | Owner | Rule |
 |---|---|---|
-| `docs/`, `data/`, `src/ctai/*.py`, `src/ctai/runner/`, `src/ctai/evaluation/`, `tests/` | Project owner / evaluation lead | Change by pull request only |
+| `docs/`, `data/`, shared core (`src/ctai/*.py`, `src/ctai/algorithms/base.py`, `src/ctai/algorithms/__init__.py`), `src/ctai/runner/`, `src/ctai/evaluation/`, `tests/`, `scripts/`, `.github/`, root configuration | Project owner / evaluation lead | Change by pull request only |
 | `src/ctai/algorithms/<yours>.py`, `docs/algorithms/<yours>.md` | The implementer of that algorithm | Change freely on your own branch |
 
-An algorithm directory is never imported by another algorithm. If you need something from the
-shared core, open a pull request against the owner instead of editing the core from your branch.
+Each implementer owns only one algorithm module (`src/ctai/algorithms/<name>.py`) and its note
+(`docs/algorithms/<name>.md`). Work on a personal branch and submit a pull request; do not
+commit directly to `main`. Algorithm modules must not import one another. The project owner
+handles shared operators and registry changes. See
+[the contribution and experiment workflow](docs/algorithm_contribution_workflow.md).
 
 ## Workflow
 
@@ -30,8 +33,8 @@ change with an algorithm change.
 2. `docs/algorithms/<yours>.md` contains: idea, reason for the choice, pseudocode, complexity,
    parameters, seed handling, limitations, dependencies, how to run, and the behaviour of both
    `time_budget` and `fixed_work` modes.
-3. Work is counted as defined in `docs/interface.md` (one unit = one candidate evaluation).
-4. No dependency outside the Python standard library, unless approved by the project owner.
+3. Work is counted according to the algorithm-specific unit in its note and the workflow document.
+4. Third-party dependencies require prior approval from the project owner and a recorded version.
 5. `make test` passes and no existing test was modified to make it pass.
 
 ## Ground rules

@@ -43,11 +43,11 @@ code runs in both experiment groups.
 
 ### Work units
 
-One unit is one candidate solution evaluation: one feasibility-plus-cost check of a complete
-plan, or of one candidate insertion / move. Reading the distance matrix, computing an objective
-from values already in memory, and copying a route are free. Every algorithm counts with this
-same unit, so the scale group compares like with like. Document any deviation from this rule in
-your algorithm note.
+Each algorithm defines its own work unit, counter, and target amount in
+[docs/algorithm_contribution_workflow.md](algorithm_contribution_workflow.md). Keep that
+definition and target fixed across all scale scenarios for the same algorithm. Do not compare work
+unit counts across different algorithms as if they represented equal computation. Algorithm notes
+must state how initialization, restarts, repairs, and other extra work are counted or capped.
 
 ## `submit_solution.submit(routes)`
 

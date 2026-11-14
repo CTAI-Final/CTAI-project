@@ -36,25 +36,29 @@ no third-party dependency.
 ## Repository layout
 
 ```
-docs/                     Rules, interface, experiment protocol, architecture, algorithm notes
-data/practice/            Six public practice scenarios + manifest (seeds and reference values)
-data/schema/              JSON Schema for a scenario file
+.github/
+  ISSUE_TEMPLATE/         Bug report template
+  workflows/ci.yml        Multi-version tests and CLI smoke checks
+docs/
+  rules.md                Approved project rules
+  interface.md            Algorithm and submission contract
+  experiment_protocol.md  Scenario groups, seeds, run and reporting procedure
+  architecture.md         Module responsibilities and data flow
+  algorithms/             One design note per algorithm
+data/
+  practice/               Six public scenarios + manifest
+  schema/                 JSON Schema for scenario files
 src/ctai/
-  geometry.py             Euclidean distance, distance matrix
-  instance.py             Scenario loading and validation
-  problem.py              Preprocessed scenario, fast route simulation
-  checker.py              Rule validation and objective (the single source of truth)
-  submitter.py            Submission channel, keeps the best feasible plan
-  budget.py               Time budget, work counting, safety ceiling
-  datagen.py              Deterministic scenario generator with a planted solution
-  algorithms/             Three reference algorithms + the move operators they share
-  runner/                 Run one experiment or a whole matrix, write JSON records
-  evaluation/             Statistics, Markdown/CSV tables, optional figures
-  cli.py                  check · solve · run · evaluate · data · demo
-tests/                    43 unit tests over checker, algorithms, runner and generator
-scripts/                  Regenerate practice data, run the formal experiment
-results/                  Run records (ignored by git, only the directory is kept)
+  algorithms/             One Python module per algorithm + shared move operators
+  evaluation/             Statistics and optional figures
+  runner/                 Single-run and batch experiment execution
+  *.py                    Shared model, checker, budget, CLI and data generation
+tests/                    Unit tests grouped by core behavior
+scripts/                  Practice-data generation and formal experiment runner
+results/                  Generated run records (ignored; only .gitkeep is committed)
 ```
+
+Root-level project files include `pyproject.toml` for package and tool configuration, `Makefile` for common commands, `requirements.txt` for the supported runtime setup, and `CONTRIBUTING.md` for ownership and pull-request workflow. Formal scenarios are kept out of the repository until release after code freeze.
 
 ## Documentation
 
@@ -64,6 +68,7 @@ results/                  Run records (ignored by git, only the directory is kep
 | [docs/interface.md](docs/interface.md) | The algorithm contract: `solve(...)`, `run_config`, submission, failure behaviour |
 | [docs/experiment_protocol.md](docs/experiment_protocol.md) | Both experiment groups, seeds, reporting, fairness rules |
 | [docs/architecture.md](docs/architecture.md) | Module map, data flow, design decisions, test strategy |
+| [docs/algorithm_contribution_workflow.md](docs/algorithm_contribution_workflow.md) | Candidate algorithm submissions, owner-run experiments, dependencies, work accounting and freeze policy |
 | [docs/algorithms/](docs/algorithms/) | One note per algorithm: idea, pseudocode, complexity, parameters, limitations |
 
 ## The three algorithms
@@ -74,9 +79,31 @@ results/                  Run records (ignored by git, only the directory is kep
 | `local_search` | Same construction + best-improvement descent over relocate / swap / 2-opt | no | [note](docs/algorithms/local_search.md) |
 | `simulated_annealing` | Same construction + annealing over the same neighbourhoods, reheated | yes | [note](docs/algorithms/simulated_annealing.md) |
 
-All three share one constructor on purpose: any difference in the results then comes from the
-search strategy, not from a lucky start. Registering a fourth algorithm is two lines — see
-[docs/interface.md](docs/interface.md).
+### Algorithm summaries
+
+The summaries below make the algorithm choices and operational details easy to compare from the
+repository home page. Each linked note contains the full design rationale, pseudocode, complexity
+analysis, parameter definitions, seed handling, limitations and run examples.
+
+| Algorithm | Pseudocode summary | Complexity | Key settings and seed | Main limitation |
+|---|---|---|---|---|
+| `greedy_insertion` | Visit customers in earliest-deadline order; test feasible insertions; choose the lowest makespan, then distance. | Worst case `O(n³k)`; distance matrix `O(n²)`. | Earliest-deadline priority; no randomness, so the seed is ignored. | No backtracking; early choices can block better route splits. |
+| `local_search` | Build a plan; scan relocate, swap and 2-opt moves; apply the best improvement until locally optimal or out of budget. | `O(n³k)` per full improvement round. | Best improvement; deterministic, so the seed is ignored. | Full neighborhood scans are costly and can stop at a local optimum. |
+| `simulated_annealing` | Build a plan; sample relocate, swap or 2-opt moves; accept improvements and sometimes worse moves; cool and reheat while retaining the best plan. | `O(Wn)` time for `W` evaluated moves; `O(n²)` memory. | Seeded `random.Random(seed)`; initial temperature `0.02 × makespan`, cooling `0.9993`, reheat at `0.1 × T0`, move mix 55/30/15. | Energy weighting and temperature settings may need retuning beyond practice data. |
+
+The comparison is intentional: greedy insertion is the deterministic construction baseline;
+local search isolates the value of neighborhood improvement; simulated annealing tests whether
+accepting some worse moves can escape local optima. All three use only the Python standard library.
+
+Run one algorithm on a practice scenario:
+
+```bash
+python -m ctai solve data/practice/easy_01.json -a greedy_insertion --seed 1
+python -m ctai solve data/practice/easy_01.json -a local_search --seed 1
+python -m ctai solve data/practice/easy_01.json -a simulated_annealing --seed 1
+```
+
+The detailed notes also give the exact behavior under both stopping modes.
 
 ## How a run is measured
 
@@ -166,7 +193,7 @@ and 3.13.
 
 - Rules v0.2 are approved; the open points from Section 15 are tracked as issues.
 - Checker, runner, both stopping modes and the practice generator are implemented and tested.
-- The three reference algorithms are working baselines, not final submissions: each implementer
+- The current reference algorithms are working baselines, not a limit on the candidate list: each implementer
   owns one module and its note, and may replace it entirely.
 - Formal scenarios are withheld until the algorithm code is frozen.
 
