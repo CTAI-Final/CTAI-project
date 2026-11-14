@@ -86,7 +86,7 @@ information discoverable from the repository home page.
 
 | Algorithm | Pseudocode summary | Complexity | Key settings and seed | Main limitation |
 |---|---|---|---|---|
-| `greedy_insertion` | Visit customers in earliest-deadline order; test feasible insertions; choose the lowest makespan, then distance. | Worst case `O(n³k)`; distance matrix `O(n²)). | Earliest-deadline priority; no randomness, so the seed is ignored. | No backtracking; early choices can block better route splits. |
+| `greedy_insertion` | Visit customers in earliest-deadline order; test feasible insertions; choose the lowest makespan, then distance. | Worst case `O(n³k)`; distance matrix `O(n²)`. | Earliest-deadline priority; no randomness, so the seed is ignored. | No backtracking; early choices can block better route splits. |
 | `local_search` | Build a plan; scan relocate, swap and 2-opt moves; apply the best improvement until locally optimal or out of budget. | `O(n³k)` per full improvement round. | Best improvement; deterministic, so the seed is ignored. | Full neighborhood scans are costly and can stop at a local optimum. |
 | `simulated_annealing` | Build a plan; sample relocate, swap or 2-opt moves; accept improvements and sometimes worse moves; cool and reheat while retaining the best plan. | `O(Wn)` time for `W` evaluated moves; `O(n²)` memory. | Seeded `random.Random(seed)`; temperature, cooling, reheat and move mix are documented in its note. | Energy weighting and temperature settings may need retuning beyond practice data. |
 
