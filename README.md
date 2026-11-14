@@ -36,25 +36,29 @@ no third-party dependency.
 ## Repository layout
 
 ```
-docs/                     Rules, interface, experiment protocol, architecture, algorithm notes
-data/practice/            Six public practice scenarios + manifest (seeds and reference values)
-data/schema/              JSON Schema for a scenario file
+.github/
+  ISSUE_TEMPLATE/         Bug report template
+  workflows/ci.yml        Multi-version tests and CLI smoke checks
+docs/
+  rules.md                Approved project rules
+  interface.md            Algorithm and submission contract
+  experiment_protocol.md  Scenario groups, seeds, run and reporting procedure
+  architecture.md         Module responsibilities and data flow
+  algorithms/             One design note per algorithm
+data/
+  practice/               Six public scenarios + manifest
+  schema/                 JSON Schema for scenario files
 src/ctai/
-  geometry.py             Euclidean distance, distance matrix
-  instance.py             Scenario loading and validation
-  problem.py              Preprocessed scenario, fast route simulation
-  checker.py              Rule validation and objective (the single source of truth)
-  submitter.py            Submission channel, keeps the best feasible plan
-  budget.py               Time budget, work counting, safety ceiling
-  datagen.py              Deterministic scenario generator with a planted solution
-  algorithms/             Three reference algorithms + the move operators they share
-  runner/                 Run one experiment or a whole matrix, write JSON records
-  evaluation/             Statistics, Markdown/CSV tables, optional figures
-  cli.py                  check · solve · run · evaluate · data · demo
-tests/                    43 unit tests over checker, algorithms, runner and generator
-scripts/                  Regenerate practice data, run the formal experiment
-results/                  Run records (ignored by git, only the directory is kept)
+  algorithms/             One Python module per algorithm + shared move operators
+  evaluation/             Statistics and optional figures
+  runner/                 Single-run and batch experiment execution
+  *.py                    Shared model, checker, budget, CLI and data generation
+tests/                    Unit tests grouped by core behavior
+scripts/                  Practice-data generation and formal experiment runner
+results/                  Generated run records (ignored; only .gitkeep is committed)
 ```
+
+Root-level project files include `pyproject.toml` for package and tool configuration, `Makefile` for common commands, `requirements.txt` for the supported runtime setup, and `CONTRIBUTING.md` for ownership and pull-request workflow. Formal scenarios are kept out of the repository until release after code freeze.
 
 ## Documentation
 
@@ -74,9 +78,20 @@ results/                  Run records (ignored by git, only the directory is kep
 | `local_search` | Same construction + best-improvement descent over relocate / swap / 2-opt | no | [note](docs/algorithms/local_search.md) |
 | `simulated_annealing` | Same construction + annealing over the same neighbourhoods, reheated | yes | [note](docs/algorithms/simulated_annealing.md) |
 
-All three share one constructor on purpose: any difference in the results then comes from the
-search strategy, not from a lucky start. Registering a fourth algorithm is two lines — see
-[docs/interface.md](docs/interface.md).
+### Algorithm summaries
+
+The detailed notes linked above are the source for the pseudocode, complexity assumptions,
+parameters, seed handling, limitations, dependencies and run commands. This table keeps the same
+information discoverable from the repository home page.
+
+| Algorithm | Pseudocode summary | Complexity | Key settings and seed | Main limitation |
+|---|---|---|---|---|
+| `greedy_insertion` | Visit customers in earliest-deadline order; test feasible insertions; choose the lowest makespan, then distance. | Worst case `O(n³k)`; distance matrix `O(n²)). | Earliest-deadline priority; no randomness, so the seed is ignored. | No backtracking; early choices can block better route splits. |
+| `local_search` | Build a plan; scan relocate, swap and 2-opt moves; apply the best improvement until locally optimal or out of budget. | `O(n³k)` per full improvement round. | Best improvement; deterministic, so the seed is ignored. | Full neighborhood scans are costly and can stop at a local optimum. |
+| `simulated_annealing` | Build a plan; sample relocate, swap or 2-opt moves; accept improvements and sometimes worse moves; cool and reheat while retaining the best plan. | `O(Wn)` time for `W` evaluated moves; `O(n²)` memory. | Seeded `random.Random(seed)`; temperature, cooling, reheat and move mix are documented in its note. | Energy weighting and temperature settings may need retuning beyond practice data. |
+
+Each detailed note also gives a reason for the algorithm choice, reproducible command examples,
+dependencies and the exact behavior under both stopping modes.
 
 ## How a run is measured
 
