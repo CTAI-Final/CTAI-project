@@ -1,7 +1,0 @@
-# Runtime: Python standard library only (Python >= 3.10).
-#
-# The core solver, checker and runner import nothing outside the standard library, so a run on
-# the assessment machine never depends on a site-packages state.
-#
-# Optional, only needed by ctai.evaluation.plots:
-# matplotlib>=3.7
