@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在同一坐标系和同一时钟下，回放三个配送算法的车辆路线。">
+  <title>车辆配送模拟 · CTAI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #eaf0f8;
+      --paper: #f7faff;
+      --panel: #fff;
+      --ink: #122442;
+      --muted: #455976;
+      --line: #cfdaeb;
+      --line-soft: #e3ebf6;
+      --primary: #1e40af;
+      --primary-hover: #19368e;
+      --accent: #d97706;
+      --navy: #102548;
+      --navy-deep: #0a1c38;
+      --map: #f4f8fe;
+      --map-dot: #607693;
+      --mono: "Consolas", "SFMono-Regular", monospace;
+      --shadow: 0 4px 15px rgb(21 48 85 / 8%);
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      min-width: 1000px;
+      margin: 0;
+      background: radial-gradient(ellipse at 48% -12%, #d5e2f5, transparent 65%), var(--canvas);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+    button, select, input { font: inherit; }
+    button, select { color: inherit; }
+    button, select, label[for="labels"], input[type="range"], input[type="checkbox"] { cursor: pointer; }
+    button { transition: background-color 160ms, border-color 160ms, color 160ms; }
+    button:disabled, input:disabled { cursor: default; opacity: .55; }
+    :focus-visible { outline: 3px solid #2455c4; outline-offset: 2px; }
+    .shell { width: min(1560px, 100% - 48px); margin: 0 auto; padding-top: 16px; }
+
+    .masthead {
+      position: relative; isolation: isolate; overflow: hidden;
+      display: flex; justify-content: space-between; align-items: center; gap: 24px;
+      padding: 16px 23px; border-radius: 16px;
+      background: linear-gradient(115deg, var(--navy-deep), var(--navy) 65%, #18365e);
+      color: #fff;
+    }
+    .masthead::before {
+      content: ""; position: absolute; inset: 0 0 0 46%; z-index: -1;
+      background: linear-gradient(90deg, #aac5ef12 1px, transparent 1px),
+                  linear-gradient(#aac5ef12 1px, transparent 1px);
+      background-size: 23px 23px;
+      mask-image: linear-gradient(to right, transparent, #000 58%);
+      pointer-events: none;
+    }
+    .project { display: flex; align-items: center; gap: 8px; color: #b8d2fb; font: 700 .77rem var(--mono); letter-spacing: .14em; }
+    .project::before { content: ""; width: 9px; height: 9px; background: #ffbf62; border-radius: 2px; transform: rotate(45deg); }
+    h1 { margin: 5px 0 3px; font-size: clamp(1.8rem, 2.6vw, 2.75rem); line-height: 1.12; letter-spacing: -.045em; }
+    .lede { margin: 0; color: #d0def4; font-size: .82rem; }
+    .masthead-tools { display: flex; align-items: center; gap: 13px; }
+    .scene-meta {
+      display: grid; grid-template-columns: repeat(3, auto); margin: 0;
+      border: 1px solid #537296; border-radius: 10px; overflow: hidden;
+      background: #0b2244b8; white-space: nowrap;
+    }
+    .scene-meta .metric { padding: 8px 13px; }
+    .scene-meta .metric + .metric { border-left: 1px solid #537296; }
+    .scene-meta .metric dt, .scene-meta .metric dd small { color: #c1d4ee; }
+    .scene-meta dd { color: #fff; font-size: 1.12rem; }
+    .language-switch {
+      display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #537296;
+      border-radius: 8px; background: #0b2244b8; white-space: nowrap;
+    }
+    .language-switch button {
+      min-height: 29px; padding: 3px 8px; color: #d0def4; background: transparent;
+      border: 0; border-radius: 5px; font-size: .77rem; font-weight: 650;
+    }
+    .language-switch button:hover { background: #28476d; }
+    .language-switch button[aria-pressed="true"] { color: #11274a; background: #dceaff; }
+    .language-switch button:focus-visible { outline-color: #ffbf62; }
+
+    .console { margin-top: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+    .controls, .transport { display: flex; align-items: flex-end; gap: 10px 18px; padding: 10px 14px; }
+    .controls { flex-wrap: wrap; }
+    .control { min-width: 0; }
+    .control-label { display: block; margin-bottom: 3px; color: var(--muted); font-size: .73rem; font-weight: 650; }
+    .segment { display: inline-flex; gap: 3px; padding: 3px; border-radius: 8px; background: #e9f0fa; }
+    .segment button { border: 1px solid transparent; border-radius: 5px; padding: 5px 10px; background: transparent; color: var(--muted); white-space: nowrap; font-size: .82rem; font-weight: 650; }
+    .segment button:hover:not([aria-pressed="true"]) { background: #dce9fb; color: var(--ink); }
+    .segment button[aria-pressed="true"] { color: var(--primary); background: #fff; border-color: #b9cdef; box-shadow: 0 1px 2px #15367715; }
+    select { min-height: 35px; border: 1px solid #aebfd8; border-radius: 7px; padding: 3px 9px; background: #fff; font-size: .82rem; }
+    select:hover { border-color: #718eb9; }
+    .scenario select { width: 258px; }
+    .label-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 35px; margin-left: auto; color: var(--muted); font-size: .79rem; }
+    input { accent-color: var(--primary); }
+
+    .transport { align-items: center; border-top: 1px solid var(--line-soft); background: #f4f7fc; border-radius: 0 0 12px 12px; }
+    .play, .reset { min-height: 35px; border-radius: 7px; padding: 5px 10px; font-size: .82rem; font-weight: 650; white-space: nowrap; }
+    .play { min-width: 83px; display: inline-flex; justify-content: center; align-items: center; gap: 7px; border: 1px solid var(--primary); background: var(--primary); color: #fff; }
+    .play:hover:not(:disabled) { background: var(--primary-hover); }
+    .play-icon { display: block; width: 11px; height: 12px; position: relative; }
+    .play-icon::before { content: ""; position: absolute; top: 1px; left: 2px; border-block: 5px solid transparent; border-left: 8px solid currentColor; }
+    .play[data-playing="true"] .play-icon::before { inset: 1px 1px; border: solid currentColor; border-width: 0 3px; }
+    .reset { border: 1px solid #aebfd8; background: #fff; color: var(--muted); }
+    .reset:hover:not(:disabled) { border-color: #839bc2; background: #e9f1fd; }
+    #elapsed { color: var(--ink); flex: 0 0 auto; min-width: 20ch; white-space: nowrap; font: 700 .80rem var(--mono); font-variant-numeric: tabular-nums; }
+    .timeline-wrap { --progress: 0%; position: relative; flex: 1 1 0; min-width: 60px; height: 32px; }
+    #timeline { appearance: none; display: block; width: 100%; height: 28px; margin: 0; background: transparent; }
+    #timeline::-webkit-slider-runnable-track { height: 6px; border-radius: 5px; background: linear-gradient(to right, var(--primary) var(--progress), #d6e1f2 var(--progress)); }
+    #timeline::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -5px; border: 2px solid #fff; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    #timeline::-moz-range-track { height: 6px; border-radius: 5px; background: #d6e1f2; }
+    #timeline::-moz-range-progress { height: 6px; border-radius: 5px; background: var(--primary); }
+    #timeline::-moz-range-thumb { width: 13px; height: 13px; border: 2px solid #fff; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .timeline-markers { position: absolute; inset: 20px 8px 0; pointer-events: none; }
+    .timeline-marker { position: absolute; top: calc(var(--lane) * 3px); width: 5px; height: 3px; margin-left: -2px; border-radius: 2px; background: var(--marker); }
+    .transport label { color: var(--muted); font-size: .76rem; white-space: nowrap; }
+
+    .workspace { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+    .algorithm { --algorithm: var(--primary); min-width: 0; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--algorithm); border-radius: 13px; box-shadow: var(--shadow); }
+    .algorithm-head { padding: 11px 12px 9px; }
+    .algorithm-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .algorithm-title h2 { margin: 0; font-size: 1.1rem; line-height: 1.25; letter-spacing: -.02em; }
+    .result-status { font-size: .73rem; font-weight: 750; padding: 4px 7px; white-space: nowrap; color: #145941; background: #e4f3ec; border-radius: 5px; }
+    .result-status.empty { color: #843e27; background: #fbeee5; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr minmax(40px, .45fr); gap: 9px; margin: 7px 0 0; }
+    .metrics .metric + .metric { border-left: 1px solid var(--line); padding-left: 8px; }
+    .metric dt { color: var(--muted); font-size: .73rem; line-height: 1.2; white-space: nowrap; }
+    .metric dd { margin: 3px 0 0; font: 700 clamp(.88rem, 1.25vw, 1.12rem) var(--mono); line-height: 1.16; white-space: nowrap; }
+    .metrics .metric:first-child dd { color: var(--algorithm); }
+    .metric dd small { font: 500 .69rem system-ui, sans-serif; color: var(--muted); }
+
+    .map-stage { position: relative; background: var(--map); border-block: 1px solid var(--line-soft); }
+    .map { display: block; width: 100%; max-height: 420px; aspect-ratio: 1; }
+    .map .plot { fill: #fbfdff; stroke: #cad8ec; }
+    .map .grid { stroke: #d9e4f4; stroke-width: 1; }
+    .map .axis { stroke: #869ab7; stroke-width: 1.4; }
+    .map .tick, .map .axis-label, .map .depot-label { fill: #455d7a; font: 11px var(--mono); }
+    .map .axis-label, .map .depot-label { fill: #223b60; font-weight: 700; }
+    .map .depot { fill: #19365d; stroke: #fff; stroke-width: 1.5; }
+    .map .route-plan { opacity: .53; }
+    .map .route-done { opacity: .96; }
+    .map .route-plan.dim { opacity: .13; }
+    .map .route-done.dim { opacity: .21; }
+    .map .customer { fill: var(--map-dot); stroke: #fff; stroke-width: 1.25; }
+    .map .customer.served { fill: var(--vehicle); }
+    .map .customer-label {
+      fill: #263f64; font: 700 10px var(--mono); paint-order: stroke;
+      stroke: #fff; stroke-width: 3; stroke-linejoin: round; pointer-events: none;
+    }
+    .map.labels-off .customer-label { display: none; }
+    .map .vehicle-number { font: 700 9.8px var(--mono); fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    .map .vehicle-mark { transition: opacity 160ms; }
+    .map .vehicle-mark.dim { opacity: .32; }
+    .map .vehicle-wait { stroke: #ffb842; stroke-width: 2; }
+    .empty-message {
+      position: absolute; z-index: 1; top: 10%; left: 50%; transform: translateX(-50%);
+      margin: 0; padding: 6px 10px; color: #843e27; background: #fff4eb;
+      border: 1px solid #e6bba4; border-radius: 6px; font-size: .78rem; font-weight: 700; white-space: nowrap;
+    }
+
+    .algorithm-foot { padding: 9px 11px 10px; }
+    .seeds { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; }
+    .micro-label { font-size: .73rem; color: var(--muted); margin-right: 3px; }
+    .seed-chip { min-width: 27px; min-height: 24px; padding: 2px 4px; border: 1px solid #c0ddcc; border-radius: 5px; background: #edf7f0; color: #15543c; font: 700 .75rem var(--mono); }
+    .seed-chip.no-solution { border-color: #e6c8bb; color: #843e27; background: #fbefe9; }
+    .seed-chip.abnormal { border-color: #e6cb88; color: #65480d; background: #fff2d7; }
+    .seed-chip.missing { background: #f0f3f7; border-color: #d3dfed; color: var(--muted); }
+    .seed-chip:hover { border-color: var(--ink); }
+    .seed-chip[aria-pressed="true"] { border-color: var(--algorithm); box-shadow: inset 0 0 0 1px var(--algorithm); }
+
+    .fleet { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+    .vehicle-chip { min-width: 0; min-height: 24px; display: flex; align-items: center; gap: 4px; padding: 3px 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); text-align: left; white-space: nowrap; font-size: .69rem; }
+    .vehicle-chip:hover { background: #e9f1ff; border-color: #9cb1d1; }
+    .vehicle-chip[aria-pressed="true"] { background: #e4eeff; border-color: var(--primary); }
+    .vehicle-chip b { font: 700 .73rem var(--mono); }
+    .vehicle-chip .vehicle-phase { overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+    .swatch { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 2px; }
+    .vehicle-info { min-height: 1.5em; margin: 6px 0 0; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+    .caption { display: flex; flex-wrap: wrap; gap: 7px 16px; align-items: center; margin: 10px 0 14px; color: var(--muted); font-size: .73rem; }
+    .caption .shortcut { margin-left: auto; white-space: nowrap; }
+    kbd { padding: 1px 4px; border: 1px solid #b5c5de; border-radius: 3px; background: #f8fbff; font: .71rem var(--mono); }
+    @media (max-width: 1120px) {
+      .shell { width: calc(100% - 32px); }
+      .controls, .transport { gap: 8px 12px; }
+      .scenario select { width: 223px; }
+      html[lang="en"] .vehicle-chip { gap: 2px; padding-inline: 3px; }
+      html[lang="en"] .swatch { width: 5px; flex-basis: 5px; }
+    }
+    @media (max-height: 920px) {
+      .shell { padding-top: 9px; }
+      .masthead { padding-block: 10px; }
+      h1 { font-size: 1.8rem; }
+      .controls, .transport { padding-block: 6px; }
+      .play, .reset, select { min-height: 31px; }
+      .workspace { margin-top: 9px; }
+      .algorithm-head { padding-block: 8px 8px; }
+      .map { height: clamp(247px, calc(100vh - 478px), 415px); }
+      .algorithm-foot { padding-block: 7px; }
+      .caption { margin-block: 7px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <div class="project">CTAI</div>
+        <h1 data-text="heading">车辆配送模拟</h1>
+        <p class="lede" data-text="intro">同一场景、同一时钟，比较三种算法如何安排车辆。</p>
+      </div>
+      <div class="masthead-tools">
+        <dl class="scene-meta" id="scene-meta"></dl>
+        <div class="language-switch" role="group" data-aria="language" aria-label="界面语言">
+          <button type="button" lang="zh-CN" data-language="zh" aria-pressed="true">中文</button>
+          <button type="button" lang="en" data-language="en" aria-pressed="false">English</button>
+        </div>
+      </div>
+    </header>
+    <div class="console">
+      <section class="controls" data-aria="filters" aria-label="实验与场景">
+        <div class="control">
+          <span class="control-label" id="group-label" data-text="experiment">实验组</span>
+          <div class="segment" role="group" aria-labelledby="group-label">
+            <button type="button" data-group="performance" data-text="performance" aria-pressed="true">性能实验</button>
+            <button type="button" data-group="scale" data-text="scale" aria-pressed="false">规模实验</button>
+          </div>
+        </div>
+        <label class="control scenario">
+          <span class="control-label" data-text="scenario">场景</span>
+          <select id="scenario"></select>
+        </label>
+        <div class="control">
+          <span class="control-label" id="mode-label" data-text="mode">运行选择</span>
+          <div class="segment" role="group" aria-labelledby="mode-label">
+            <button type="button" data-mode="best" data-text="best" aria-pressed="true">五次最佳</button>
+            <button type="button" data-mode="seed" data-text="sameSeed" aria-pressed="false">同种子</button>
+          </div>
+        </div>
+        <label class="control" id="seed-control" hidden>
+          <span class="control-label" data-text="seed">种子</span>
+          <select id="seed"></select>
+        </label>
+        <label class="label-toggle" for="labels">
+          <input id="labels" type="checkbox" checked><span data-text="customerLabels">显示客户编号</span>
+        </label>
+      </section>
+      <section class="transport" data-aria="playback" aria-label="播放控制">
+        <button class="play" id="play" type="button" aria-keyshortcuts="Space">
+          <span class="play-icon" aria-hidden="true"></span><span id="play-label">播放</span>
+        </button>
+        <button class="reset" id="reset" type="button" data-text="reset">重置</button>
+        <output id="elapsed" for="timeline">0.00 / 0.00 min</output>
+        <div class="timeline-wrap" id="timeline-wrap">
+          <input id="timeline" type="range" min="0" max="0" step="any" value="0" data-aria="timeline" aria-label="模拟进度">
+          <div class="timeline-markers" id="timeline-markers" aria-hidden="true"></div>
+        </div>
+        <label for="speed" data-text="speed">速度</label>
+        <select id="speed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+        </select>
+      </section>
+    </div>
+    <section class="workspace" id="panels" data-aria="comparison" aria-label="算法路线对比"></section>
+    <footer class="caption">
+      <span data-text="mapLegend">仓库 (0, 0) · 单位 km · 粗线为已行驶路段</span>
+      <span data-text="timelineLegend">时间轴色标对应各栏最后一辆车的回仓时刻</span>
+      <span class="shortcut">
+        <kbd data-text="spaceKey">空格</kbd> <span data-text="playPause">播放 / 暂停</span>
+        <kbd>←</kbd> <kbd>→</kbd> <span data-text="skipTime">跳转 5 分钟</span>
+      </span>
+    </footer>
+    <noscript>请启用浏览器 JavaScript，以查看路线回放。 <span lang="en">Enable JavaScript to replay routes.</span></noscript>
+  </main>
+  <script id="route-data" type="application/json">__CTAI_ROUTE_DATA__</script>
+  <script>
+    "use strict";
+
+    const data = JSON.parse(document.getElementById("route-data").textContent);
+    const algorithms = [
+      ["regret_insertion", "#986010"],
+      ["simulated_annealing", "#2254b5"],
+      ["tabu_search", "#0c6e67"],
+    ];
+    const vehicleColors = ["#087a6e", "#c05c30", "#3d64aa", "#904d91",
+      "#91732c", "#b14464", "#247592", "#6b682b"];
+    const messages = {
+      zh: {
+        heading: "车辆配送模拟",
+        intro: "同一场景、同一时钟，比较三种算法如何安排车辆。",
+        description: "在同一坐标系和同一时钟下，回放三个配送算法的车辆路线。",
+        language: "界面语言", filters: "实验与场景", experiment: "实验组",
+        performance: "性能实验", scale: "规模实验", scenario: "场景",
+        mode: "运行选择", best: "五次最佳", sameSeed: "同种子", seed: "种子",
+        customerLabels: "显示客户编号", playback: "播放控制", play: "播放",
+        pause: "暂停", reset: "重置", timeline: "模拟进度", speed: "速度",
+        comparison: "算法路线对比", playPause: "播放 / 暂停", skipTime: "跳转 5 分钟", spaceKey: "空格",
+        mapLegend: "仓库 (0, 0) · 单位 km · 粗线为已行驶路段",
+        timelineLegend: "时间轴色标对应各栏最后一辆车的回仓时刻",
+        regret_insertion: "后悔插入", simulated_annealing: "模拟退火", tabu_search: "禁忌搜索",
+        "status-feasible": "可行", "status-no-solution": "未找到可行解",
+        "status-abnormal": "异常终止", "status-missing": "缺少运行记录",
+        "phase-ready": "待出发", "phase-drive": "行驶", "phase-wait": "等待",
+        "phase-service": "服务", "phase-return": "回仓中", "phase-done": "已回仓",
+        perf_easy_01: "三种路线对比", perf_medium_01: "同种子路线差异",
+        perf_hard_04: "成功率差异", scale_10_02: "两车入门", scale_20_03: "里程接近、完工时间不同",
+        scale_40_02: "大规模路线差异", scale_40_03: "八车三方对比",
+        easy: "简单", medium: "中等", hard: "困难",
+        scaleSize: "{customers} 客户 / {vehicles} 辆车",
+        customers: "客户", vehicleLimit: "车辆上限", vehicleCapacity: "每车载重",
+        mapLabel: "{algorithm}的配送路线坐标图", depot: "仓库 (0, 0)",
+        customer: "客户 {id}", window: "时间窗 {window} min", stop: "车 {vehicle} · 第 {order} 站",
+        solved: "{count}/{total} 有解", makespan: "完工时间", distance: "总里程", runSeeds: "运行种子",
+        seedStatus: "种子 {seed} · {status}", highlight: "突出车辆 {vehicle} 的路线",
+        noBest: "五次运行均未找到可用路线。", lastReturn: "最后回仓 {vehicles} · {time} min",
+        listSeparator: "、", minutes: "{time} 分钟",
+      },
+      en: {
+        heading: "Vehicle route replay",
+        intro: "Compare how three algorithms route vehicles on the same map and clock.",
+        description: "Replay three delivery algorithms on the same coordinate grid and simulation clock.",
+        language: "Interface language", filters: "Experiment and scenario", experiment: "Experiment",
+        performance: "Performance", scale: "Scale", scenario: "Scenario",
+        mode: "Run selection", best: "Best of five", sameSeed: "Same seed", seed: "Seed",
+        customerLabels: "Show customer IDs", playback: "Playback controls", play: "Play",
+        pause: "Pause", reset: "Reset", timeline: "Simulation progress", speed: "Speed",
+        comparison: "Algorithm route comparison", playPause: "Play / pause", skipTime: "Skip 5 min", spaceKey: "Space",
+        mapLegend: "Depot (0, 0) · km · Thick lines show travel completed",
+        timelineLegend: "Timeline marks show each fleet’s final return",
+        regret_insertion: "Regret Insertion", simulated_annealing: "Simulated Annealing", tabu_search: "Tabu Search",
+        "status-feasible": "Feasible", "status-no-solution": "No feasible route",
+        "status-abnormal": "Run ended abnormally", "status-missing": "Run record unavailable",
+        "phase-ready": "Ready", "phase-drive": "Driving", "phase-wait": "Waiting",
+        "phase-service": "Service", "phase-return": "Return", "phase-done": "Back",
+        perf_easy_01: "Three routes", perf_medium_01: "Seed comparison",
+        perf_hard_04: "Feasibility gap", scale_10_02: "Two vehicles", scale_20_03: "Similar distance",
+        scale_40_02: "Route differences", scale_40_03: "Eight vehicles",
+        easy: "Easy", medium: "Medium", hard: "Hard",
+        scaleSize: "{customers} customers / {vehicles} vehicles",
+        customers: "Customers", vehicleLimit: "Fleet limit", vehicleCapacity: "Capacity / vehicle",
+        mapLabel: "{algorithm} delivery route map", depot: "Depot (0, 0)",
+        customer: "Customer {id}", window: "Time window {window} min", stop: "Vehicle {vehicle} · stop {order}",
+        solved: "{count}/{total} feasible", makespan: "Makespan", distance: "Total distance", runSeeds: "Run seeds",
+        seedStatus: "Seed {seed} · {status}", highlight: "Highlight vehicle {vehicle}’s route",
+        noBest: "None of the five runs found a feasible route.", lastReturn: "Last return {vehicles} · {time} min",
+        listSeparator: ", ", minutes: "{time} minutes",
+      },
+    };
+    const defaults = {performance: "perf_easy_01", scale: "scale_40_03"};
+    const byId = id => document.getElementById(id);
+    const controls = {
+      scenario: byId("scenario"), seed: byId("seed"), labels: byId("labels"),
+      play: byId("play"), reset: byId("reset"), time: byId("timeline"),
+      speed: byId("speed"), elapsed: byId("elapsed"),
+      track: byId("timeline-wrap"), milestones: byId("timeline-markers"), playLabel: byId("play-label"),
+    };
+    let language = "zh";
+    let group = "performance";
+    let scenario = data[group].find(item => item.id === defaults[group]) ?? data[group][0];
+    let mode = "best";
+    let selectedSeed = 1;
+    let showLabels = true;
+    let panels = [];
+    let clock = 0;
+    let duration = 0;
+    let frame = null;
+    let lastFrame = null;
+
+    function t(key, values = {}) {
+      return messages[language][key].replace(/\{(\w+)\}/g, (_, name) => values[name]);
+    }
+
+    function setLanguage(value) {
+      language = value;
+      document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+      document.title = t("heading") + " · CTAI";
+      document.querySelector('meta[name="description"]').content = t("description");
+      for (const node of document.querySelectorAll("[data-text]")) {
+        node.textContent = t(node.dataset.text);
+      }
+      for (const node of document.querySelectorAll("[data-aria]")) {
+        node.setAttribute("aria-label", t(node.dataset.aria));
+      }
+      setPressed("[data-language]", "language", language);
+      fillScenarioOptions();
+      renderScenario(true);
+      updatePlayButton();
+    }
+
+    function element(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function svgElement(tag, attributes = {}, text) {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function metric(label, value, unit = "") {
+      const node = element("div", "metric");
+      const valueNode = element("dd", "", value);
+      if (unit) valueNode.append(" ", element("small", "", unit));
+      node.append(element("dt", "", label), valueNode);
+      return node;
+    }
+
+    function fillScenarioOptions() {
+      const optgroups = new Map();
+      controls.scenario.replaceChildren();
+      for (const item of data[group]) {
+        const category = group === "scale"
+          ? t("scaleSize", {customers: item.customers, vehicles: item.vehicles})
+          : t(item.id.split("_")[1]);
+        if (!optgroups.has(category)) {
+          const options = element("optgroup");
+          options.label = category;
+          controls.scenario.append(options);
+          optgroups.set(category, options);
+        }
+        const note = messages[language][item.id];
+        const option = element("option", "", item.id + (note ? " · " + note : ""));
+        option.value = item.id;
+        optgroups.get(category).append(option);
+      }
+      controls.scenario.value = scenario.id;
+    }
+
+    function fillSeedOptions() {
+      const seeds = new Set();
+      for (const algorithm of Object.values(scenario.algorithms)) {
+        for (const run of algorithm.runs) seeds.add(run.seed);
+      }
+      const options = [...seeds].sort((a, b) => a - b);
+      if (!options.includes(selectedSeed)) selectedSeed = options[0];
+      controls.seed.replaceChildren(...options.map(seed => {
+        const option = element("option", "", String(seed));
+        option.value = seed;
+        return option;
+      }));
+      controls.seed.value = selectedSeed;
+    }
+
+    function setPressed(selector, key, value) {
+      for (const button of document.querySelectorAll(selector)) {
+        button.setAttribute("aria-pressed", String(button.dataset[key] === value));
+      }
+    }
+
+    function optionFor(algorithm) {
+      const seed = mode === "best" ? algorithm.bestSeed : selectedSeed;
+      return algorithm.runs.find(run => run.seed === seed)
+        ?? {seed, status: seed === null ? "no-solution" : "missing"};
+    }
+
+    function geometry(points) {
+      const extent = Math.max(...points.map(point => Math.max(Math.abs(point.x), Math.abs(point.y))));
+      const limit = Math.max(10, Math.ceil(extent / 2) * 2);
+      const margin = 27;
+      const size = 366;
+      const scale = size / (limit * 2);
+      return {
+        limit, margin, size,
+        x: value => margin + (limit + value) * scale,
+        y: value => margin + (limit - value) * scale,
+      };
+    }
+
+    function drawAxes(parent, grid) {
+      const far = grid.margin + grid.size;
+      parent.append(svgElement("rect", {
+        x: grid.margin, y: grid.margin, width: grid.size, height: grid.size,
+        class: "plot",
+      }));
+      const tickStep = grid.limit / 2;
+      for (let tick = -grid.limit; tick <= grid.limit; tick += tickStep) {
+        const x = grid.x(tick);
+        const y = grid.y(tick);
+        const lineClass = tick === 0 ? "axis" : "grid";
+        parent.append(
+          svgElement("line", {x1: x, y1: grid.margin, x2: x, y2: far, class: lineClass}),
+          svgElement("line", {x1: grid.margin, y1: y, x2: far, y2: y, class: lineClass}),
+          svgElement("text", {x, y: far + 15, "text-anchor": "middle", class: "tick"}, String(tick)),
+          svgElement("text", {x: grid.margin - 6, y: y + 3, "text-anchor": "end", class: "tick"}, String(tick)),
+        );
+      }
+      parent.append(
+        svgElement("text", {x: far, y: far + 27, "text-anchor": "end", class: "axis-label"}, "X / km"),
+        svgElement("text", {x: grid.margin, y: grid.margin - 10, class: "axis-label"}, "Y / km"),
+      );
+    }
+
+    function polyline(points, color, width, className) {
+      return svgElement("polyline", {
+        points, fill: "none", stroke: color, "stroke-width": width,
+        "stroke-linecap": "round", "stroke-linejoin": "round", class: className,
+      });
+    }
+
+    function createMap(name, run) {
+      const grid = geometry(scenario.points);
+      const locations = new Map(scenario.points.map(point => [point.id, {
+        ...point, px: grid.x(point.x), py: grid.y(point.y),
+      }]));
+      const coords = id => {
+        const point = locations.get(id);
+        return point.px + "," + point.py;
+      };
+      const svg = svgElement("svg", {
+        class: showLabels ? "map" : "map labels-off",
+        viewBox: "0 0 420 420", role: "img", "aria-label": t("mapLabel", {algorithm: name}),
+      });
+      drawAxes(svg, grid);
+      const planLayer = svgElement("g");
+      const trailLayer = svgElement("g");
+      const pointLayer = svgElement("g");
+      const fleetLayer = svgElement("g");
+      svg.append(planLayer, trailLayer, pointLayer, fleetLayer);
+
+      const assignments = new Map();
+      const fleet = (run.vehicles ?? []).map(route => {
+        const color = vehicleColors[(route.vehicle - 1) % vehicleColors.length];
+        route.legs.forEach((leg, index) => {
+          if (leg.to) assignments.set(leg.to, {color, vehicle: route.vehicle, order: index + 1, end: leg.end});
+        });
+        const planned = [route.legs[0].from, ...route.legs.map(leg => leg.to)].map(coords).join(" ");
+        const plan = polyline(planned, color, 1.8, "route-plan");
+        const trail = polyline(coords(0), color, 3.2, "route-done");
+        planLayer.append(plan);
+        trailLayer.append(trail);
+        const marker = svgElement("g", {class: "vehicle-mark"});
+        const halo = svgElement("circle", {r: 10, fill: "#fff", opacity: .96});
+        const center = svgElement("circle", {r: 8, fill: color});
+        marker.append(halo, center, svgElement("text", {class: "vehicle-number"}, route.vehicle));
+        fleetLayer.append(marker);
+        return {route, color, plan, trail, marker, center, phase: ""};
+      });
+
+      const customers = [];
+      for (const point of locations.values()) {
+        if (point.id === 0) continue;
+        const assigned = assignments.get(point.id);
+        const dot = svgElement("circle", {
+          cx: point.px, cy: point.py, r: 3.8, class: "customer",
+        });
+        const details = [
+          t("customer", {id: point.id}), point.demand + " kg",
+          t("window", {window: point.window.join("–")}),
+        ];
+        if (assigned) {
+          details.push(t("stop", {vehicle: assigned.vehicle, order: assigned.order}));
+          dot.style.setProperty("--vehicle", assigned.color);
+        }
+        dot.append(svgElement("title", {}, details.join(" · ")));
+        pointLayer.append(dot, svgElement("text", {
+          x: point.px + 6, y: point.py - 5, class: "customer-label",
+        }, point.id));
+        customers.push({dot, assigned});
+      }
+      const origin = locations.get(0);
+      pointLayer.append(
+        svgElement("rect", {x: origin.px - 6, y: origin.py - 6, width: 12, height: 12, rx: 2,
+          class: "depot"}),
+        svgElement("text", {x: origin.px + 8, y: origin.py + 13, class: "depot-label"}, t("depot")),
+      );
+      return {svg, locations, coords, fleet, customers};
+    }
+
+    function buildPanel(algorithmId, color) {
+      const name = t(algorithmId);
+      const algorithm = scenario.algorithms[algorithmId];
+      const run = optionFor(algorithm);
+      const available = run.status === "feasible";
+      const card = element("article", "algorithm");
+      card.style.setProperty("--algorithm", color);
+      const header = element("div", "algorithm-head");
+      const title = element("div", "algorithm-title");
+      title.append(
+        element("h2", "", name),
+        element("span", "result-status" + (available ? "" : " empty"),
+          t("solved", {count: algorithm.successes, total: algorithm.runs.length})),
+      );
+      const metrics = element("dl", "metrics");
+      metrics.append(
+        metric(t("makespan"), available ? run.makespan.toFixed(2) : "—", available ? "min" : ""),
+        metric(t("distance"), available ? run.distance.toFixed(2) : "—", available ? "km" : ""),
+        metric(t("seed"), run.seed ?? "—"),
+      );
+      header.append(title, metrics);
+
+      const map = createMap(name, run);
+      const mapStage = element("div", "map-stage");
+      mapStage.append(map.svg);
+      const footer = element("div", "algorithm-foot");
+      const seeds = element("div", "seeds");
+      seeds.append(element("span", "micro-label", t("runSeeds")));
+      for (const choice of algorithm.runs) {
+        const chip = element("button", "seed-chip " + choice.status, choice.seed);
+        chip.type = "button";
+        chip.title = t("seedStatus", {seed: choice.seed, status: t("status-" + choice.status)});
+        chip.setAttribute("aria-label", name + " " + chip.title);
+        chip.setAttribute("aria-pressed", String(choice.seed === run.seed));
+        chip.addEventListener("click", () => {
+          const index = panels.findIndex(panel => panel.card === card);
+          setMode("seed", choice.seed);
+          panels[index]?.card.querySelector('.seed-chip[aria-pressed="true"]')?.focus();
+        });
+        seeds.append(chip);
+      }
+      footer.append(seeds);
+
+      const panel = {card, name, color, map, run, selectedVehicle: null, info: null};
+      if (available) {
+        const fleetRow = element("div", "fleet");
+        for (const item of map.fleet) {
+          const vehicle = item.route.vehicle;
+          const chip = element("button", "vehicle-chip");
+          chip.type = "button";
+          chip.setAttribute("aria-label", t("highlight", {vehicle}));
+          chip.setAttribute("aria-pressed", "false");
+          const swatch = element("span", "swatch");
+          swatch.style.background = item.color;
+          item.chip = chip;
+          item.phaseLabel = element("span", "vehicle-phase");
+          chip.append(swatch, element("b", "", "V" + vehicle), item.phaseLabel);
+          chip.addEventListener("click", () => selectVehicle(panel, vehicle));
+          fleetRow.append(chip);
+        }
+        panel.info = element("p", "vehicle-info");
+        footer.append(fleetRow, panel.info);
+        writeVehicleInfo(panel);
+      } else {
+        const message = mode === "best" ? t("noBest") : t("status-" + run.status);
+        mapStage.append(element("p", "empty-message", message));
+      }
+      card.append(header, mapStage, footer);
+      return panel;
+    }
+
+    function writeVehicleInfo(panel) {
+      if (!panel.info) return;
+      const item = panel.map.fleet.find(vehicle => vehicle.route.vehicle === panel.selectedVehicle);
+      if (!item) {
+        const latest = panel.map.fleet
+          .filter(vehicle => Math.abs(vehicle.route.completion - panel.run.makespan) < 1e-6)
+          .map(vehicle => "V" + vehicle.route.vehicle);
+        panel.info.textContent = t("lastReturn", {
+          vehicles: latest.join(t("listSeparator")), time: panel.run.makespan.toFixed(2),
+        });
+        return;
+      }
+      const route = item.route;
+      const path = [route.legs[0].from, ...route.legs.map(leg => leg.to)].join(" → ");
+      panel.info.textContent = "V" + route.vehicle + " · " + route.load + " kg · " +
+        route.distance.toFixed(2) + " km · " + route.completion.toFixed(2) + " min | " + path;
+    }
+
+    function selectVehicle(panel, vehicle) {
+      panel.selectedVehicle = panel.selectedVehicle === vehicle ? null : vehicle;
+      for (const item of panel.map.fleet) {
+        const selected = item.route.vehicle === panel.selectedVehicle;
+        const dim = panel.selectedVehicle !== null && !selected;
+        item.chip.setAttribute("aria-pressed", String(selected));
+        for (const object of [item.plan, item.trail, item.marker]) object.classList.toggle("dim", dim);
+      }
+      writeVehicleInfo(panel);
+    }
+
+    function advanceVehicle(item, map, time) {
+      const legIndex = item.route.legs.findIndex(leg => time < leg.end);
+      const leg = item.route.legs[legIndex];
+      let phase = "done";
+      let point = map.locations.get(0);
+      const completedLegs = leg ? item.route.legs.slice(0, legIndex) : item.route.legs;
+      const trail = [map.coords(0), ...completedLegs.map(done => map.coords(done.to))];
+
+      if (leg && time <= leg.arrive) {
+        const origin = map.locations.get(leg.from);
+        const target = map.locations.get(leg.to);
+        const length = leg.arrive - leg.depart;
+        const fraction = length > 0 ? Math.min(1, Math.max(0, (time - leg.depart) / length)) : 1;
+        point = {
+          px: origin.px + (target.px - origin.px) * fraction,
+          py: origin.py + (target.py - origin.py) * fraction,
+        };
+        phase = time === 0 ? "ready" : (leg.to === 0 ? "return" : "drive");
+      } else if (leg) {
+        point = map.locations.get(leg.to);
+        phase = time < leg.start ? "wait" : "service";
+      }
+      trail.push(point.px + "," + point.py);
+      item.trail.setAttribute("points", trail.join(" "));
+      item.marker.setAttribute("transform", "translate(" + point.px + " " + point.py + ")");
+      item.marker.setAttribute("visibility", phase === "ready" || phase === "done" ? "hidden" : "visible");
+      if (item.phase !== phase) {
+        item.phase = phase;
+        item.phaseLabel.textContent = t("phase-" + phase);
+        item.chip.title = "V" + item.route.vehicle + " · " + item.phaseLabel.textContent;
+        item.center.classList.toggle("vehicle-wait", phase === "wait");
+      }
+    }
+
+    function renderClock() {
+      controls.time.value = clock;
+      controls.elapsed.value = clock.toFixed(2) + " / " + duration.toFixed(2) + " min";
+      controls.time.setAttribute("aria-valuetext", t("minutes", {time: clock.toFixed(1)}));
+      controls.track.style.setProperty("--progress", (duration ? 100 * clock / duration : 0) + "%");
+      for (const panel of panels) {
+        for (const item of panel.map.fleet) advanceVehicle(item, panel.map, clock);
+        for (const {dot, assigned} of panel.map.customers) {
+          const served = assigned && clock >= assigned.end;
+          dot.classList.toggle("served", Boolean(served));
+        }
+      }
+    }
+
+    function updatePlayButton() {
+      const playing = frame !== null;
+      controls.play.dataset.playing = String(playing);
+      controls.playLabel.textContent = t(playing ? "pause" : "play");
+    }
+
+    function pause() {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      lastFrame = null;
+      updatePlayButton();
+    }
+
+    function tick(now) {
+      if (lastFrame !== null) {
+        const step = Math.min((now - lastFrame) / 1000, .12);
+        clock = Math.min(duration, clock + step * 3 * Number(controls.speed.value));
+        renderClock();
+      }
+      if (clock >= duration) {
+        pause();
+        return;
+      }
+      lastFrame = now;
+      frame = requestAnimationFrame(tick);
+    }
+
+    function togglePlay() {
+      if (duration <= 0) return;
+      if (frame !== null) {
+        pause();
+        return;
+      }
+      if (clock >= duration) {
+        clock = 0;
+        renderClock();
+      }
+      frame = requestAnimationFrame(tick);
+      updatePlayButton();
+    }
+
+    function renderMilestones() {
+      controls.milestones.replaceChildren();
+      for (const [lane, panel] of panels.entries()) {
+        if (panel.run.status !== "feasible" || duration <= 0) continue;
+        const mark = element("span", "timeline-marker");
+        mark.style.left = (100 * panel.run.makespan / duration) + "%";
+        mark.style.setProperty("--lane", lane);
+        mark.style.setProperty("--marker", panel.color);
+        controls.milestones.append(mark);
+      }
+    }
+
+    function renderScenario(keepPlayback = false) {
+      const vehicleSelections = keepPlayback ? panels.map(panel => panel.selectedVehicle) : [];
+      if (!keepPlayback) {
+        pause();
+        clock = 0;
+      }
+      fillSeedOptions();
+      setPressed("[data-mode]", "mode", mode);
+      byId("seed-control").hidden = mode !== "seed";
+      byId("scene-meta").replaceChildren(
+        metric(t("customers"), scenario.customers), metric(t("vehicleLimit"), scenario.vehicles),
+        metric(t("vehicleCapacity"), scenario.capacity, "kg"),
+      );
+      panels = algorithms.map(([id, color]) => buildPanel(id, color));
+      byId("panels").replaceChildren(...panels.map(panel => panel.card));
+      vehicleSelections.forEach((vehicle, index) => {
+        if (vehicle !== null) selectVehicle(panels[index], vehicle);
+      });
+      duration = Math.max(0, ...panels.map(panel => panel.run.makespan ?? 0));
+      controls.time.max = duration;
+      controls.play.disabled = controls.time.disabled = controls.reset.disabled = duration <= 0;
+      renderMilestones();
+      renderClock();
+    }
+
+    function setMode(value, seed = selectedSeed) {
+      mode = value;
+      selectedSeed = Number(seed);
+      renderScenario();
+    }
+
+    function selectScenario(item) {
+      scenario = item;
+      showLabels = scenario.customers <= 20;
+      controls.labels.checked = showLabels;
+      renderScenario();
+    }
+
+    for (const button of document.querySelectorAll("[data-group]")) {
+      button.addEventListener("click", () => {
+        if (group === button.dataset.group) return;
+        group = button.dataset.group;
+        setPressed("[data-group]", "group", group);
+        selectScenario(data[group].find(item => item.id === defaults[group]) ?? data[group][0]);
+        fillScenarioOptions();
+      });
+    }
+    for (const button of document.querySelectorAll("[data-mode]")) {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    }
+    for (const button of document.querySelectorAll("[data-language]")) {
+      button.addEventListener("click", () => {
+        if (language !== button.dataset.language) setLanguage(button.dataset.language);
+      });
+    }
+    controls.scenario.addEventListener("change", () => {
+      selectScenario(data[group].find(item => item.id === controls.scenario.value));
+    });
+    controls.seed.addEventListener("change", () => setMode("seed", controls.seed.value));
+    controls.labels.addEventListener("change", () => {
+      showLabels = controls.labels.checked;
+      for (const panel of panels) panel.map.svg.classList.toggle("labels-off", !showLabels);
+    });
+    controls.play.addEventListener("click", togglePlay);
+    controls.reset.addEventListener("click", () => {
+      pause();
+      clock = 0;
+      renderClock();
+    });
+    controls.time.addEventListener("input", () => {
+      clock = Number(controls.time.value);
+      renderClock();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (event.target instanceof Element &&
+          event.target.closest("button, input, select, textarea, a, [contenteditable]")) return;
+      if (event.code === "Space" && !event.repeat) {
+        event.preventDefault();
+        togglePlay();
+      }
+      if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+        event.preventDefault();
+        clock = Math.max(0, Math.min(duration, clock + (event.code === "ArrowLeft" ? -5 : 5)));
+        renderClock();
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) pause();
+    });
+    setLanguage(language);
+  </script>
+</body>
+</html>
