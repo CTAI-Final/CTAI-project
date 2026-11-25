@@ -75,36 +75,17 @@ Root-level project files include `pyproject.toml` for package and tool configura
 
 | Id | Strategy | Random | Note |
 |---|---|---|---|
-| `greedy_insertion` | Sequential cheapest insertion, earliest-deadline first, no repair | no | [note](docs/algorithms/greedy_insertion.md) |
-| `local_search` | Same construction + best-improvement descent over relocate / swap / 2-opt | no | [note](docs/algorithms/local_search.md) |
-| `simulated_annealing` | Same construction + annealing over the same neighbourhoods, reheated | yes | [note](docs/algorithms/simulated_annealing.md) |
-
-### Algorithm summaries
-
-The summaries below make the algorithm choices and operational details easy to compare from the
-repository home page. Each linked note contains the full design rationale, pseudocode, complexity
-analysis, parameter definitions, seed handling, limitations and run examples.
-
-| Algorithm | Pseudocode summary | Complexity | Key settings and seed | Main limitation |
-|---|---|---|---|---|
-| `greedy_insertion` | Visit customers in earliest-deadline order; test feasible insertions; choose the lowest makespan, then distance. | Worst case `O(n³k)`; distance matrix `O(n²)`. | Earliest-deadline priority; no randomness, so the seed is ignored. | No backtracking; early choices can block better route splits. |
-| `local_search` | Build a plan; scan relocate, swap and 2-opt moves; apply the best improvement until locally optimal or out of budget. | `O(n³k)` per full improvement round. | Best improvement; deterministic, so the seed is ignored. | Full neighborhood scans are costly and can stop at a local optimum. |
-| `simulated_annealing` | Build a plan; sample relocate, swap or 2-opt moves; accept improvements and sometimes worse moves; cool and reheat while retaining the best plan. | `O(Wn)` time for `W` evaluated moves; `O(n²)` memory. | Seeded `random.Random(seed)`; initial temperature `0.02 × makespan`, cooling `0.9993`, reheat at `0.1 × T0`, move mix 55/30/15. | Energy weighting and temperature settings may need retuning beyond practice data. |
-
-The comparison is intentional: greedy insertion is the deterministic construction baseline;
-local search isolates the value of neighborhood improvement; simulated annealing tests whether
-accepting some worse moves can escape local optima. All three use only the Python standard library.
+| `regret_insertion` | Regret-k construction, prioritizing customers with fewer feasible placements | no | [note](docs/algorithms/regret_insertion.md) |
+| `simulated_annealing` | Penalty-guided annealing with critical-route moves and restarts | yes | [note](docs/algorithms/simulated_annealing.md) |
+| `tabu_search` | Relocate, swap and 2-opt with tabu tenure and randomized restarts | yes | [note](docs/algorithms/tabu_search.md) |
 
 Run one algorithm on a practice scenario:
 
 ```bash
-python -m ctai solve data/practice/easy_01.json -a greedy_insertion --seed 1
-python -m ctai solve data/practice/easy_01.json -a local_search --seed 1
+python -m ctai solve data/practice/easy_01.json -a regret_insertion --seed 1
+python -m ctai solve data/practice/easy_01.json -a tabu_search --seed 1
 python -m ctai solve data/practice/easy_01.json -a simulated_annealing --seed 1
 ```
-
-The detailed notes also give the exact behavior under both stopping modes.
-
 ## How a run is measured
 
 ```python

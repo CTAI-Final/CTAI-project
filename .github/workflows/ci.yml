@@ -37,6 +37,6 @@ jobs:
       - name: Fixed-work reference run
         run: |
           python -m ctai run data/practice \
-            -a greedy_insertion local_search \
+            -a regret_insertion simulated_annealing tabu_search \
             --seeds 1 --mode fixed_work --work-budget 5000 \
             --out results/ci

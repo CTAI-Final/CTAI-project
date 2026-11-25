@@ -48,14 +48,11 @@ class TestPracticeScenarios(unittest.TestCase):
                     self.assertTrue(evaluation.feasible, evaluation.errors)
                     self.assertGreater(evaluation.makespan_min or 0, 0)
 
-    def test_improvement_beats_pure_construction(self) -> None:
-        """The two improving algorithms must not be worse than the constructor on average."""
-        instance = load_instance(PRACTICE / "medium_01.json")
-        greedy = run_algorithm("greedy_insertion", instance).best_score
-        local = run_algorithm("local_search", instance).best_score
-        anneal = run_algorithm("simulated_annealing", instance).best_score
-        self.assertLessEqual(local, greedy)
-        self.assertLessEqual(anneal, greedy)
+    def test_registry_contains_active_algorithms(self) -> None:
+        self.assertEqual(
+            set(available()),
+            {"regret_insertion", "simulated_annealing", "tabu_search"},
+        )
 
     def test_seeded_runs_are_reproducible(self) -> None:
         instance = load_instance(PRACTICE / "medium_01.json")

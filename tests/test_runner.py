@@ -27,7 +27,7 @@ class TestTimeBudget(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             spec = RunSpec(
                 instance_path=PRACTICE / "easy_01.json",
-                algorithm="greedy_insertion",
+                algorithm="regret_insertion",
                 mode="time_budget",
                 time_limit_sec=0.5,
                 out_dir=Path(tmp),
@@ -42,14 +42,14 @@ class TestTimeBudget(unittest.TestCase):
             written = list(Path(tmp).glob("*.json"))
             self.assertEqual(len(written), 1)
             with written[0].open(encoding="utf-8") as handle:
-                self.assertEqual(json.load(handle)["algorithm_id"], "greedy_insertion")
+                self.assertEqual(json.load(handle)["algorithm_id"], "regret_insertion")
 
 
 class TestFixedWork(unittest.TestCase):
     def test_work_budget_stops_the_run(self) -> None:
         spec = RunSpec(
             instance_path=PRACTICE / "medium_01.json",
-            algorithm="local_search",
+            algorithm="tabu_search",
             mode="fixed_work",
             work_budget=2000,
             out_dir=None,
@@ -57,7 +57,7 @@ class TestFixedWork(unittest.TestCase):
         record = run_once(spec)
         self.assertTrue(record["feasible"])
         self.assertEqual(record["termination"], "work_budget")
-        # the descent stops as soon as the budget is reached; one candidate may overshoot
+        # the search stops as soon as the budget is reached; one candidate may overshoot
         self.assertLessEqual(record["work_done"], 2000 + 10)
 
     def test_fixed_work_requires_a_budget(self) -> None:

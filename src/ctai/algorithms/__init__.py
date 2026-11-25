@@ -18,20 +18,20 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Callable
 
-from . import greedy_insertion, local_search, simulated_annealing
+from . import regret_insertion, simulated_annealing, tabu_search
 
 Solver = Callable[[dict, int, dict, object], None]
 
 REGISTRY: dict[str, Solver] = {
-    greedy_insertion.ALGORITHM_ID: greedy_insertion.solve,
-    local_search.ALGORITHM_ID: local_search.solve,
+    regret_insertion.ALGORITHM_ID: regret_insertion.solve,
     simulated_annealing.ALGORITHM_ID: simulated_annealing.solve,
+    tabu_search.ALGORITHM_ID: tabu_search.solve,
 }
 
 DESCRIPTIONS: dict[str, str] = {
-    greedy_insertion.ALGORITHM_ID: greedy_insertion.ALGORITHM_NAME,
-    local_search.ALGORITHM_ID: local_search.ALGORITHM_NAME,
+    regret_insertion.ALGORITHM_ID: regret_insertion.ALGORITHM_NAME,
     simulated_annealing.ALGORITHM_ID: simulated_annealing.ALGORITHM_NAME,
+    tabu_search.ALGORITHM_ID: tabu_search.ALGORITHM_NAME,
 }
 
 

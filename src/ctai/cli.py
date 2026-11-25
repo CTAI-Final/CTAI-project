@@ -192,7 +192,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     solve = sub.add_parser("solve", help="run one algorithm once")
     solve.add_argument("scenario")
-    solve.add_argument("-a", "--algorithm", default="greedy_insertion")
+    solve.add_argument("-a", "--algorithm", default="simulated_annealing")
     solve.add_argument("--seed", type=int, default=1)
     solve.add_argument("--mode", choices=("time_budget", "fixed_work"), default="time_budget")
     solve.add_argument("--time-limit", type=float, default=30.0, dest="time_limit")

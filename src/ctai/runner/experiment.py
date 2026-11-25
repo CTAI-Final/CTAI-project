@@ -27,7 +27,7 @@ class RunSpec:
     """One measured run: one algorithm, one scenario, one seed, one stopping rule."""
 
     instance_path: Path
-    algorithm: str = "greedy_insertion"
+    algorithm: str = "simulated_annealing"
     seed: int = 1
     run_index: int = 1
     mode: str = "time_budget"
